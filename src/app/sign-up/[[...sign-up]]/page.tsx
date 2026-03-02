@@ -1,10 +1,11 @@
-import {{ SignUp }} from "@clerk/nextjs";
-import {{ SITE }} from "@/lib/site-config";
+import { SignUp } from "@clerk/nextjs";
+import { SITE } from "@/lib/site-config";
 
-export default function Page() {{
+export default function Page() {
   return (
     <div className="min-h-[calc(100vh-80px)] text-white">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-2">
+        {/* Left: brand */}
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/50 p-8">
           <div className="pointer-events-none absolute inset-0 opacity-40">
             <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-red-600/20 blur-3xl" />
@@ -42,13 +43,14 @@ export default function Page() {{
           </div>
         </div>
 
+        {/* Right: clerk */}
         <div className="glow-card rounded-3xl border border-white/10 bg-black/55 p-6 md:p-8">
           <SignUp
             routing="path"
-            path="/sign-up"
+            path="/sign-in"
             signInUrl="/sign-in"
             appearance={{
-              elements: {{
+              elements: {
                 card: "bg-transparent shadow-none border-0 p-0",
                 headerTitle: "text-white text-2xl",
                 headerSubtitle: "text-white/60",
@@ -59,7 +61,7 @@ export default function Page() {{
                 formFieldLabel: "text-white/70",
                 dividerLine: "bg-white/10",
                 dividerText: "text-white/50",
-              }},
+              },
             }}
           />
           <div className="mt-4 text-xs text-white/45">
@@ -69,13 +71,13 @@ export default function Page() {{
       </div>
     </div>
   );
-}}
+}
 
-function Feature({{ title, desc }}: {{ title: string; desc: string }}) {{
+function Feature({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
       <div className="text-sm font-semibold">{title}</div>
       <div className="mt-1 text-sm text-white/60">{desc}</div>
     </div>
   );
-}}
+}

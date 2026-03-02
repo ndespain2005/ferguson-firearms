@@ -35,6 +35,36 @@ type TransferLite = {
   email?: string | null;
 };
 
+type PurchaseRequestLite = {
+  id: string;
+  created_at: string;
+  status: string | null;
+  firearm: string;
+  source: string | null;
+  receiving_ffl: string;
+  notes: string | null;
+};
+
+type ServiceQuoteLite = {
+  id: string;
+  created_at: string;
+  status: string | null;
+  service_type: string;
+  description: string;
+};
+
+type ContactMessageLite = {
+  id: string;
+  created_at: string;
+  status: string | null;
+  topic: string;
+  message: string;
+};
+
+type Stats = {
+  totals: { purchaseRequests: number; serviceQuotes: number; contactMessages: number; transfers: number };
+  open: { purchaseRequests: number; serviceQuotes: number; contactMessages: number; transfers: number };
+};
 
 const EMPTY: Profile = {
   name: "",
@@ -45,14 +75,6 @@ const EMPTY: Profile = {
   state: "",
   zip: "",
 };
-
-const TIMELINE = ["Pending", "Received", "Ready", "Completed"] as const;
-
-function stepIndex(status: string | null) {
-  const s = (status || "Pending").toLowerCase();
-  const idx = TIMELINE.findIndex((t) => t.toLowerCase() === s);
-  return idx >= 0 ? idx : 0;
-}
 
 function formatLocal(iso: string) {
   try {
@@ -68,601 +90,523 @@ function formatLocal(iso: string) {
   }
 }
 
+function toneForStatus(status: string | null | undefined) {
+  const s = (status || "New").toLowerCase();
+  if (["complete", "completed"].includes(s)) return "success";
+  if (["ready"].includes(s)) return "info";
+  if (["closed"].includes(s)) return "muted";
+  if (["quoted", "ordered", "received", "in progress", "pending", "scheduled"].includes(s)) return "warn";
+  return "danger";
+}
+
 export default function AccountPage() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const wishlist = useWishlist();
   const { prefs, update } = usePreferences();
 
-  const [tab, setTab] = useState<"profile" | "transfers" | "wishlist" | "prefs">("profile");
+  const [tab, setTab] = useState<"dashboard" | "activity" | "transfers" | "profile" | "wishlist" | "prefs">(
+    "dashboard"
+  );
 
   const [profile, setProfile] = useState<Profile>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  const [purchaseRows, setPurchaseRows] = useState<PurchaseRequestLite[]>([]);
+  const [quoteRows, setQuoteRows] = useState<ServiceQuoteLite[]>([]);
+  const [contactRows, setContactRows] = useState<ContactMessageLite[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+
   const [transfers, setTransfers] = useState<TransferLite[]>([]);
   const [tLoading, setTLoading] = useState(false);
   const [tError, setTError] = useState<string | null>(null);
-  const [selectedTransfer, setSelectedTransfer] = useState<TransferLite | null>(null);
-  const [updSaving, setUpdSaving] = useState(false);
-  const [updMsg, setUpdMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const meta = (user.unsafeMetadata || {}) as any;
-
+    const p = meta.profile || {};
     setProfile({
-      name: (user.fullName || meta.name || "").toString(),
-      phone: (meta.phone || "").toString(),
-      address1: (meta.address1 || "").toString(),
-      address2: (meta.address2 || "").toString(),
-      city: (meta.city || "").toString(),
-      state: (meta.state || "").toString(),
-      zip: (meta.zip || "").toString(),
+      name: p.name || user.fullName || "",
+      phone: p.phone || "",
+      address1: p.address1 || "",
+      address2: p.address2 || "",
+      city: p.city || "",
+      state: p.state || "",
+      zip: p.zip || "",
     });
   }, [user]);
 
-  const email = useMemo(() => user?.primaryEmailAddress?.emailAddress || "", [user]);
+  // Live stats from Supabase (via server API)
+  useEffect(() => {
+    if (!user) return;
+    setStatsLoading(true);
+    fetch("/api/my/stats")
+      .then((r) => r.json())
+      .then((j) => (j?.ok ? setStats({ totals: j.totals, open: j.open }) : null))
+      .catch(() => null)
+      .finally(() => setStatsLoading(false));
+  }, [user]);
 
-  async function save() {
+  // Activity lists (lazy)
+  useEffect(() => {
+    if (!user) return;
+    if (tab !== "activity" && tab !== "dashboard") return;
+
+    setActivityLoading(true);
+    Promise.all([
+      fetch("/api/my/purchase-requests").then((r) => r.json()).catch(() => null),
+      fetch("/api/my/service-quotes").then((r) => r.json()).catch(() => null),
+      fetch("/api/my/contact-messages").then((r) => r.json()).catch(() => null),
+    ])
+      .then(([p, q, c]) => {
+        setPurchaseRows((p?.ok ? p.rows : []) || []);
+        setQuoteRows((q?.ok ? q.rows : []) || []);
+        setContactRows((c?.ok ? c.rows : []) || []);
+      })
+      .finally(() => setActivityLoading(false));
+  }, [user, tab]);
+
+  // Transfers (existing behavior)
+  useEffect(() => {
+    if (!user) return;
+    setTLoading(true);
+    setTError(null);
+    fetch("/api/my/transfers")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j?.ok) throw new Error(j?.error || "Failed to load transfers");
+        setTransfers(j.transfers || []);
+      })
+      .catch((e) => setTError(e?.message || "Failed to load transfers"))
+      .finally(() => setTLoading(false));
+  }, [user]);
+
+  async function saveProfile() {
     if (!user) return;
     setSaving(true);
     setSaved(false);
     try {
       await user.update({
-        firstName: profile.name.split(" ")[0] || undefined,
-        lastName: profile.name.split(" ").slice(1).join(" ") || undefined,
-      });
-
-      await user.update({
         unsafeMetadata: {
-          name: profile.name,
-          phone: profile.phone,
-          address1: profile.address1,
-          address2: profile.address2,
-          city: profile.city,
-          state: profile.state,
-          zip: profile.zip,
+          ...(user.unsafeMetadata || {}),
+          profile,
         },
       });
-
       setSaved(true);
-      setTimeout(() => setSaved(false), 1800);
+      setTimeout(() => setSaved(false), 1400);
     } finally {
       setSaving(false);
     }
   }
 
-  async function loadTransfers() {
-    setTLoading(true);
-    setTError(null);
-    try {
-      const res = await fetch("/api/my/transfers", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load transfers.");
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || "Failed to load transfers.");
-      setTransfers((json.transfers || []) as TransferLite[]);
-    } catch (e: any) {
-      setTError(e?.message || "Failed to load transfers.");
-    } finally {
-      setTLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (tab === "transfers") loadTransfers();
-  }, [tab]);
-
   const wishlistItems = useMemo(() => {
-    const set = new Set(wishlist.list);
-    return INVENTORY.filter((p) => set.has(p.id));
-  }, [wishlist.list]);
+    const set = new Set(wishlist.ids);
+    return INVENTORY.filter((i) => set.has(i.id));
+  }, [wishlist.ids]);
 
-  if (!isLoaded) return <div className="px-4 py-10 text-white/60">Loading…</div>;
+  const displayName = user?.firstName || user?.fullName || "Account";
 
   return (
-    <div className="space-y-10 text-white">
+    <div className="space-y-10">
       <SectionHeading
         eyebrow="Account"
-        title="My Account"
-        subtitle="Manage your profile, view transfer requests, and save items for later."
+        title={`Welcome back, ${displayName}`}
+        subtitle="Hybrid tactical + enterprise: clean workflows, clear statuses, fast communication."
       />
 
       <SignedOut>
         <Card title="Sign in required">
-          <div className="text-white/70 text-lg">Please sign in to view your account.</div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <ButtonLink href="/sign-in">Sign In</ButtonLink>
-            <ButtonLink href="/sign-up" variant="ghost">
-              Create Account
+          <div className="text-sm text-muted">Sign in to view your dashboard and track requests.</div>
+          <div className="mt-4 flex gap-3">
+            <ButtonLink href="/sign-in">Sign in</ButtonLink>
+            <ButtonLink href="/sign-up" variant="secondary">
+              Create account
             </ButtonLink>
           </div>
         </Card>
       </SignedOut>
 
       <SignedIn>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge>{email}</Badge>
-          <Link
-            href="/shop"
-            className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
-          >
-            Back to Shop
-          </Link>
-          <Link
-            href="/transfers/intake"
-            className="btn-red-glow glow-pulse rounded-2xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 hover:shadow-red-600/35"
-          >
-            Start a Transfer
-          </Link>
+        <div className="flex flex-wrap gap-2">
+          <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")}>
+            Dashboard
+          </TabButton>
+          <TabButton active={tab === "activity"} onClick={() => setTab("activity")}>
+            My Activity
+          </TabButton>
+          <TabButton active={tab === "transfers"} onClick={() => setTab("transfers")}>
+            Transfers
+          </TabButton>
+          <TabButton active={tab === "profile"} onClick={() => setTab("profile")}>
+            Profile
+          </TabButton>
+          <TabButton active={tab === "wishlist"} onClick={() => setTab("wishlist")}>
+            Wishlist
+          </TabButton>
+          <TabButton active={tab === "prefs"} onClick={() => setTab("prefs")}>
+            Preferences
+          </TabButton>
         </div>
 
-        <Card title="Dashboard">
-          <div className="flex flex-wrap gap-2">
-            <Tab active={tab === "profile"} onClick={() => setTab("profile")}>Profile</Tab>
-            <Tab active={tab === "transfers"} onClick={() => setTab("transfers")}>Transfers</Tab>
-            <Tab active={tab === "wishlist"} onClick={() => setTab("wishlist")}>Wishlist ({wishlist.count})</Tab>
-            <Tab active={tab === "prefs"} onClick={() => setTab("prefs")}>Preferences</Tab>
-          </div>
+        {tab === "dashboard" ? (
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <Card title="Overview">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard title="Open purchase requests" value={stats?.open.purchaseRequests} loading={statsLoading} />
+                  <StatCard title="Open service quotes" value={stats?.open.serviceQuotes} loading={statsLoading} />
+                  <StatCard title="Transfers in progress" value={stats?.open.transfers} loading={statsLoading} />
+                  <StatCard title="Open messages" value={stats?.open.contactMessages} loading={statsLoading} />
+                </div>
 
-          <div className="mt-6">
-            {tab === "profile" ? (
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Card title="Profile & contact">
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <QuickLink href="/firearms/request" title="New firearm request" desc="Model/SKU + vendor link." />
+                  <QuickLink href="/quote" title="Request a quote" desc="Gunsmithing / installs." />
+                  <QuickLink href="/transfers/intake" title="Start transfer intake" desc="Track it end-to-end." />
+                </div>
+              </Card>
+
+              <Card title="Recent activity">
+                {activityLoading ? (
+                  <div className="text-sm text-muted">Loading…</div>
+                ) : (
                   <div className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Full name" value={profile.name} onChange={(v) => setProfile({ ...profile, name: v })} />
-                      <Field label="Phone" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} />
-                    </div>
-                    <Field label="Address line 1" value={profile.address1} onChange={(v) => setProfile({ ...profile, address1: v })} />
-                    <Field label="Address line 2" value={profile.address2} onChange={(v) => setProfile({ ...profile, address2: v })} />
-
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <Field label="City" value={profile.city} onChange={(v) => setProfile({ ...profile, city: v })} />
-                      <Field label="State" value={profile.state} onChange={(v) => setProfile({ ...profile, state: v })} />
-                      <Field label="ZIP" value={profile.zip} onChange={(v) => setProfile({ ...profile, zip: v })} />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={save}
-                        disabled={saving}
-                        className="btn-red-glow inline-flex items-center justify-center rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 disabled:opacity-60"
-                      >
-                        {saving ? "Saving…" : "Save Profile"}
-                      </button>
-                      {saved ? <span className="text-red-300 font-semibold">Saved</span> : null}
-                    </div>
+                    <Recent label="Purchase requests" items={purchaseRows.slice(0, 3).map((r) => ({ id: r.id, created_at: r.created_at, status: r.status, text: r.firearm }))} />
+                    <Recent label="Service quotes" items={quoteRows.slice(0, 3).map((r) => ({ id: r.id, created_at: r.created_at, status: r.status, text: `${r.service_type}: ${r.description}` }))} />
+                    <Recent label="Messages" items={contactRows.slice(0, 3).map((r) => ({ id: r.id, created_at: r.created_at, status: r.status, text: `${r.topic}: ${r.message}` }))} />
                   </div>
-                </Card>
+                )}
+              </Card>
+            </div>
 
-                <Card title="Security & help">
-                  <div className="text-white/70 text-lg space-y-4">
-                    <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
-                      Password reset is handled by Clerk. Use “Forgot password” on sign-in.
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <ButtonLink href="/sign-in">Open Sign In</ButtonLink>
-                      <ButtonLink href="/contact" variant="ghost">Contact Support</ButtonLink>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            ) : null}
-
-            {tab === "transfers" ? (
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={loadTransfers}
-                    className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
-                  >
-                    Refresh
-                  </button>
-                  {tLoading ? <Badge>Loading…</Badge> : null}
-                  {tError ? <Badge>{tError}</Badge> : null}
+            <div className="space-y-6">
+              <Card title="Quick access">
+                <div className="grid gap-2">
+                  <ButtonLink href="/contact" variant="secondary">
+                    Contact the shop
+                  </ButtonLink>
+                  <ButtonLink href="/admin" variant="secondary">
+                    Admin dashboard
+                  </ButtonLink>
                 </div>
+                <div className="mt-4 text-xs text-muted">
+                  Pro tip: include SKUs/links when possible for fastest quotes.
+                </div>
+              </Card>
 
-                {transfers.length ? (
-                  <div className="overflow-hidden rounded-3xl border border-white/10">
-                    <div className="grid grid-cols-12 bg-black/40 px-4 py-3 text-xs font-semibold text-white/60">
-                      <div className="col-span-3">Date</div>
-                      <div className="col-span-3">Status</div>
-                      <div className="col-span-3">Type</div>
-                      <div className="col-span-3">Item</div>
-                    </div>
-                    {transfers.map((t) => (
-                      <button key={t.id} type="button" onClick={() => setSelectedTransfer(t)} className="grid w-full grid-cols-12 gap-2 border-t border-white/10 bg-black/25 px-4 py-3 text-left text-sm text-white/70 transition hover:bg-black/35">
-                        <div className="col-span-3">{formatLocal(t.created_at)}</div>
-                        <div className="col-span-3">
-                          <span className="rounded-xl border border-white/10 bg-black/35 px-3 py-1 text-xs font-semibold text-white/80">
-                            {t.status || "Pending"}
-                          </span>
-                        </div>
-                        <div className="col-span-3">{t.firearm_type || "—"}</div>
-                        <div className="col-span-3 truncate">{t.item_name || "—"}</div>
-                      </button>
-                    ))}
+              <Card title="Preferences snapshot">
+                <div className="text-sm text-muted space-y-2">
+                  <div>
+                    <span className="text-foreground font-medium">Email updates:</span> {prefs.emailUpdates ? "On" : "Off"}
                   </div>
+                  <div>
+                    <span className="text-foreground font-medium">Weekly deals:</span> {prefs.weeklyDeals ? "On" : "Off"}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === "activity" ? (
+          <div className="space-y-6">
+            <Card title="Purchase requests">
+              <SimpleTable
+                columns={["Submitted", "Status", "Details"]}
+                rows={purchaseRows.map((r) => [
+                  formatLocal(r.created_at),
+                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <span key={r.id + "-d"} className="text-sm text-muted">{r.firearm}</span>,
+                ])}
+                empty="No purchase requests yet."
+                loading={activityLoading}
+              />
+            </Card>
+
+            <Card title="Service quotes">
+              <SimpleTable
+                columns={["Submitted", "Status", "Details"]}
+                rows={quoteRows.map((r) => [
+                  formatLocal(r.created_at),
+                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <span key={r.id + "-d"} className="text-sm text-muted">{r.service_type}: {r.description}</span>,
+                ])}
+                empty="No quote requests yet."
+                loading={activityLoading}
+              />
+            </Card>
+
+            <Card title="Contact messages">
+              <SimpleTable
+                columns={["Submitted", "Status", "Message"]}
+                rows={contactRows.map((r) => [
+                  formatLocal(r.created_at),
+                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <span key={r.id + "-m"} className="text-sm text-muted">{r.topic}: {r.message}</span>,
+                ])}
+                empty="No messages yet."
+                loading={activityLoading}
+              />
+            </Card>
+          </div>
+        ) : null}
+
+        {tab === "transfers" ? (
+          <Card title="Transfers">
+            {tLoading ? <div className="text-sm text-muted">Loading…</div> : null}
+            {tError ? <div className="text-sm text-red-400">{tError}</div> : null}
+
+            {!tLoading && !tError ? (
+              <div className="space-y-3">
+                {transfers.length === 0 ? (
+                  <div className="text-sm text-muted">No transfers yet.</div>
                 ) : (
-                  <div className="rounded-3xl border border-white/10 bg-black/25 p-6 text-white/70">
-                    No transfers found for this email yet.
-                    <div className="mt-3">
-                      <Link
-                        href="/transfers/intake"
-                        className="btn-red-glow glow-pulse inline-flex items-center justify-center rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 hover:shadow-red-600/35"
-                      >
-                        Start a Transfer
-                      </Link>
+                  transfers.map((t) => (
+                    <div key={t.id} className="rounded-2xl border border-border bg-background p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-medium">{t.item_name || "Transfer"}</div>
+                        <Badge tone={toneForStatus(t.status)}>{t.status || "Pending"}</Badge>
+                      </div>
+                      <div className="mt-2 text-sm text-muted">
+                        Submitted: {formatLocal(t.created_at)} • Seller: {t.seller_name || "—"} • Tracking:{" "}
+                        {t.tracking_number || "—"}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <Link className="text-sm text-red-400 hover:text-red-300" href="/transfers">
+                          Transfer info
+                        </Link>
+                      </div>
                     </div>
-                  </div>
+                  ))
                 )}
               </div>
             ) : null}
+          </Card>
+        ) : null}
 
-            {tab === "wishlist" ? (
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={wishlist.clear}
-                    className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
-                  >
-                    Clear wishlist
-                  </button>
-                  <Link
-                    href="/shop"
-                    className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
-                  >
-                    Browse shop
-                  </Link>
-                </div>
+        {tab === "profile" ? (
+          <Card title="Profile">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Name" value={profile.name} onChange={(v) => setProfile({ ...profile, name: v })} />
+              <Field label="Phone" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} />
+              <Field label="Address 1" value={profile.address1} onChange={(v) => setProfile({ ...profile, address1: v })} />
+              <Field label="Address 2" value={profile.address2} onChange={(v) => setProfile({ ...profile, address2: v })} />
+              <Field label="City" value={profile.city} onChange={(v) => setProfile({ ...profile, city: v })} />
+              <Field label="State" value={profile.state} onChange={(v) => setProfile({ ...profile, state: v })} />
+              <Field label="ZIP" value={profile.zip} onChange={(v) => setProfile({ ...profile, zip: v })} />
+            </div>
 
-                {wishlistItems.length ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {wishlistItems.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={`/shop/${encodeURIComponent(p.id)}`}
-                        className="rounded-3xl border border-white/10 bg-black/25 p-5 transition hover:border-red-500/25 hover:bg-black/35"
-                      >
-                        <div className="text-lg font-semibold text-white/85">{p.name}</div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge>{p.category}</Badge>
-                          {p.tag ? <Badge>{p.tag}</Badge> : null}
-                          {p.brand ? <Badge>{p.brand}</Badge> : null}
-                        </div>
-                        <div className="mt-3 text-white/60 text-sm">
-                          {p.stock < 0 ? "Request only" : p.stock === 0 ? "Out of stock" : `In stock: ${p.stock}`}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-3xl border border-white/10 bg-black/25 p-6 text-white/70">
-                    Your wishlist is empty.
-                  </div>
-                )}
-              </div>
-            ) : null}
-
-            {tab === "prefs" ? (
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Card title="Notifications">
-                  <div className="space-y-4 text-white/70">
-                    <Toggle
-                      label="Transfer ready texts (placeholder)"
-                      description="Keep this on to receive a pickup-ready notification in the future."
-                      value={prefs.transferReadyTexts}
-                      onChange={(v) => update({ transferReadyTexts: v })}
-                    />
-                    <Toggle
-                      label="Marketing emails (placeholder)"
-                      description="Occasional promos and shop updates."
-                      value={prefs.marketingEmails}
-                      onChange={(v) => update({ marketingEmails: v })}
-                    />
-                  </div>
-                </Card>
-
-                <Card title="Payments">
-                  <div className="space-y-4 text-white/70">
-                    <Toggle
-                      label="Save card for faster checkout (placeholder)"
-                      description="Checkout is not enabled yet. This saves your preference only."
-                      value={prefs.savedCardPlaceholder}
-                      onChange={(v) => update({ savedCardPlaceholder: v })}
-                    />
-                    <div className="rounded-2xl border border-white/10 bg-black/35 p-4 text-white/60 text-sm">
-                      When you add a real checkout system, this page can be wired to a payment provider.
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            ) : null}
-          </div>
-        </Card>
-      
-{selectedTransfer ? (
-  <TransferModal
-    t={selectedTransfer}
-    onClose={() => {
-      setSelectedTransfer(null);
-      setUpdMsg(null);
-    }}
-    onSaved={async () => {
-      await loadTransfers();
-    }}
-  />
-) : null}
-
-</SignedIn>
-    </div>
-  );
-}
-
-function TransferModal({
-  t,
-  onClose,
-  onSaved,
-}: {
-  t: TransferLite;
-  onClose: () => void;
-  onSaved: () => Promise<void> | void;
-}) {
-  const [tracking, setTracking] = useState(t.tracking_number || "");
-  const [seller, setSeller] = useState(t.seller_name || "");
-  const [sellerUrl, setSellerUrl] = useState(t.seller_website || "");
-  const [notes, setNotes] = useState(t.notes || "");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-
-  const idx = stepIndex(t.status);
-
-  async function save() {
-    setSaving(true);
-    setMsg(null);
-    try {
-      const res = await fetch(`/api/my/transfers/${t.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tracking_number: tracking,
-          seller_name: seller,
-          seller_website: sellerUrl,
-          notes,
-        }),
-      });
-      const json = await res.json().catch(() => ({} as any));
-      if (!res.ok || !json.ok) throw new Error(json.error || "Update failed");
-      setMsg("Saved");
-      await onSaved();
-      setTimeout(() => setMsg(null), 1500);
-    } catch (e: any) {
-      setMsg(e?.message || "Update failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/10 bg-black/85 p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-2xl font-semibold text-white/90">Transfer #{t.id}</div>
-            <div className="mt-1 text-white/60 text-sm">{formatLocal(t.created_at)}</div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-white/10 bg-black/35 px-4 py-2 text-sm font-semibold text-white/70 hover:bg-red-600/15 hover:text-white"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="mt-5 rounded-3xl border border-white/10 bg-black/35 p-5">
-          <div className="text-white/70 text-sm font-semibold">Status timeline</div>
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {TIMELINE.map((s, i) => {
-              const done = i <= idx;
-              return (
-                <div key={s} className="space-y-2">
-                  <div
-                    className={`h-2 rounded-full border ${
-                      done ? "border-red-500/40 bg-red-600/25" : "border-white/10 bg-black/30"
-                    }`}
-                  />
-                  <div className={`text-xs font-semibold ${done ? "text-white/80" : "text-white/45"}`}>{s}</div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 inline-flex items-center gap-2">
-            <span className="rounded-xl border border-white/10 bg-black/40 px-3 py-1 text-xs font-semibold text-white/80">
-              {t.status || "Pending"}
-            </span>
-            <span className="text-white/50 text-xs">Updates come from Ferguson Firearms.</span>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Card title="Details">
-            <div className="space-y-3 text-white/70 text-sm">
-              <div>
-                <div className="text-white/50 text-xs">Type</div>
-                <div className="text-white/80 font-semibold">{t.firearm_type || "—"}</div>
-              </div>
-              <div>
-                <div className="text-white/50 text-xs">Item</div>
-                <div className="text-white/80 font-semibold">{t.item_name || "—"}</div>
-              </div>
-              {t.serial_number ? (
-                <div>
-                  <div className="text-white/50 text-xs">Serial</div>
-                  <div className="text-white/80 font-semibold">{t.serial_number}</div>
-                </div>
-              ) : null}
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                onClick={() => void saveProfile()}
+                disabled={saving}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {saving ? "Saving…" : "Save profile"}
+              </button>
+              {saved ? <span className="text-sm text-emerald-300">Saved</span> : null}
             </div>
           </Card>
+        ) : null}
 
-          <Card title="Update info (limited)">
+        {tab === "wishlist" ? (
+          <Card title="Wishlist">
+            {wishlistItems.length === 0 ? (
+              <div className="text-sm text-muted">No saved items yet.</div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {wishlistItems.map((i) => (
+                  <div key={i.id} className="rounded-2xl border border-border bg-background p-4">
+                    <div className="font-medium">{i.name}</div>
+                    <div className="mt-1 text-sm text-muted">{i.category}</div>
+                    <div className="mt-3 flex gap-2">
+                      <Link href={`/inventory/${i.id}`} className="text-sm text-red-400 hover:text-red-300">
+                        View
+                      </Link>
+                      <button className="text-sm text-white/60 hover:text-white" onClick={() => wishlist.toggle(i.id)}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        ) : null}
+
+        {tab === "prefs" ? (
+          <Card title="Preferences">
             <div className="space-y-4">
-              <Field label="Tracking number" value={tracking} onChange={setTracking} />
-              <Field label="Seller name" value={seller} onChange={setSeller} />
-              <Field label="Seller website" value={sellerUrl} onChange={setSellerUrl} />
-              <label className="block space-y-2">
-                <div className="text-white/70">Notes</div>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full min-h-[110px] rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
-                  placeholder="Add any helpful info for the shop…"
-                />
-              </label>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={save}
-                  disabled={saving}
-                  className="btn-red-glow inline-flex items-center justify-center rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 disabled:opacity-60"
-                >
-                  {saving ? "Saving…" : "Save updates"}
-                </button>
-                {msg ? <span className="text-white/70 text-sm">{msg}</span> : null}
-              </div>
-
-              <div className="text-white/40 text-xs">
-                For security, you can only update tracking, seller info, and notes. If you need changes to the item/type,
-                contact the shop.
-              </div>
+              <ToggleRow
+                title="Email updates"
+                desc="Get status updates on your requests."
+                value={prefs.emailUpdates}
+                onChange={(v) => update({ emailUpdates: v })}
+              />
+              <ToggleRow
+                title="Weekly deals"
+                desc="Receive weekly deal highlights."
+                value={prefs.weeklyDeals}
+                onChange={(v) => update({ weeklyDeals: v })}
+              />
             </div>
           </Card>
-        </div>
-      </div>
+        ) : null}
+      </SignedIn>
     </div>
   );
 }
 
-function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function TabButton({ active, onClick, children }: any) {
   return (
     <button
-      type="button"
       onClick={onClick}
-      className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
-        active
-          ? "border-red-500/40 bg-red-600/20 text-white"
-          : "border-white/10 bg-black/35 text-white/70 hover:bg-red-600/15 hover:text-white"
-      }`}
+      className={
+        "rounded-xl border px-3 py-2 text-sm transition " +
+        (active
+          ? "border-red-500/40 bg-red-600/15 text-white"
+          : "border-white/10 bg-black/30 text-white/70 hover:text-white hover:border-white/20")
+      }
     >
       {children}
     </button>
   );
 }
 
-function Field({
+function StatCard({ title, value, loading }: { title: string; value?: number; loading?: boolean }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
+      <div className="text-sm text-white/60">{title}</div>
+      <div className="mt-2 text-2xl font-semibold">{loading ? "—" : String(value ?? 0)}</div>
+    </div>
+  );
+}
+
+function QuickLink({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <a href={href} className="rounded-2xl border border-white/10 bg-black/35 p-4 transition hover:border-white/20">
+      <div className="text-sm font-semibold text-white">{title}</div>
+      <div className="mt-1 text-sm text-white/60">{desc}</div>
+    </a>
+  );
+}
+
+function Recent({
   label,
-  value,
-  onChange,
+  items,
 }: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
+  items: Array<{ id: string; created_at: string; status: string | null; text: string }>;
 }) {
   return (
+    <div>
+      <div className="text-sm font-semibold">{label}</div>
+      {items.length === 0 ? (
+        <div className="mt-1 text-sm text-muted">No items yet.</div>
+      ) : (
+        <div className="mt-2 space-y-2">
+          {items.map((r) => (
+            <div
+              key={r.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-background p-3"
+            >
+              <div className="min-w-0">
+                <div className="text-sm text-muted">{formatLocal(r.created_at)}</div>
+                <div className="truncate text-sm">{r.text}</div>
+              </div>
+              <Badge tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimpleTable({
+  columns,
+  rows,
+  empty,
+  loading,
+}: {
+  columns: string[];
+  rows: any[][];
+  empty: string;
+  loading?: boolean;
+}) {
+  if (loading) return <div className="text-sm text-muted">Loading…</div>;
+  if (!rows.length) return <div className="text-sm text-muted">{empty}</div>;
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="text-xs text-muted">
+          <tr>
+            {columns.map((c) => (
+              <th key={c} className="py-2 pr-4">
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, idx) => (
+            <tr key={idx} className="border-t border-border align-top">
+              {r.map((cell, j) => (
+                <td key={j} className="py-3 pr-4">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
     <label className="block space-y-2">
-      <div className="text-white/70">{label}</div>
+      <div className="text-sm text-muted">{label}</div>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
     </label>
   );
 }
 
-function Toggle({
-  label,
-  description,
+function ToggleRow({
+  title,
+  desc,
   value,
   onChange,
 }: {
-  label: string;
-  description: string;
+  title: string;
+  desc: string;
   value: boolean;
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-white/85 font-semibold">{label}</div>
-          <div className="mt-1 text-white/60 text-sm">{description}</div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onChange(!value)}
-          className={`h-9 w-16 rounded-full border transition ${
-            value ? "border-red-500/40 bg-red-600/25" : "border-white/10 bg-black/35"
-          }`}
-          aria-label={label}
-        >
-          <span
-            className={`block h-7 w-7 translate-x-1 rounded-full bg-white/80 transition ${
-              value ? "translate-x-8 bg-red-200" : ""
-            }`}
-          />
-        </button>
+    <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-background p-4">
+      <div>
+        <div className="font-medium">{title}</div>
+        <div className="mt-1 text-sm text-muted">{desc}</div>
       </div>
-    
-      <div className="rounded-2xl border border-border bg-background p-5">
-        <div className="text-sm font-medium">Admin</div>
-        <div className="mt-1 text-xs text-muted">View customer purchase requests (admin only).</div>
-        <a
-          href="/admin/purchase-requests"
-          className="mt-3 inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
-        >
-          Open Purchase Requests
-        </a>
-      </div>
-
-
-      <div className="rounded-2xl border border-border bg-background p-5">
-        <div className="text-sm font-medium">Admin</div>
-        <div className="mt-1 text-xs text-muted">View inboxes (admin only).</div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <a
-            href="/admin"
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
-          >
-            Admin Dashboard
-          </a>
-
-          <a
-            href="/admin/purchase-requests"
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
-          >
-            Purchase Requests
-          </a>
-          <a
-            href="/admin/service-quotes"
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
-          >
-            Service Quotes
-          </a>
-          <a
-            href="/admin/contact-messages"
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
-          >
-            Contact Messages
-          </a>
-        </div>
-      </div>
-
-</div>
+      <button
+        className={
+          "rounded-full px-3 py-1 text-xs font-semibold " +
+          (value ? "bg-red-600 text-white" : "bg-black/30 text-white/70 border border-white/10")
+        }
+        onClick={() => onChange(!value)}
+      >
+        {value ? "On" : "Off"}
+      </button>
+    </div>
   );
 }

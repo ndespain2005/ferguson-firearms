@@ -130,7 +130,7 @@ export default function HomePage() {
             ["Fast Communication", "Clear updates from intake → pickup."],
             ["Built for You, Not Just a Transaction", "Designed to feel premium and simple."],
             ["Local Focus", "Indianapolis & Wanamaker area."],
-            ["Real People. Real Accountability.", "Black/red styling with subtle motion."],
+            ["Real People. Real Accountability.", "Modern, confident styling with purposeful motion and clarity."],
           ].map(([h, p]) => (
             <div key={h} className="rounded-2xl border border-white/10 bg-black/45 p-5">
               <div className="text-lg font-semibold">{h}</div>

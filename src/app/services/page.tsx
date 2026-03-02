@@ -26,10 +26,10 @@ export default function ServicesPage() {
 
       <Card title="Request a Quote">
         <p className="text-sm text-muted">
-          For the preview, quotes route through the Contact page form.
+          Submit the form and we’ll reply with scope, pricing, and turnaround.
         </p>
         <div className="mt-4">
-          <ButtonLink href="/contact">Request Service Quote</ButtonLink>
+          <ButtonLink href="/quote">Request a Quote</ButtonLink>
         </div>
       </Card>
     </div>

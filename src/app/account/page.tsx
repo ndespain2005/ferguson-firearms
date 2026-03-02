@@ -630,6 +630,32 @@ function Toggle({
         </a>
       </div>
 
+
+      <div className="rounded-2xl border border-border bg-background p-5">
+        <div className="text-sm font-medium">Admin</div>
+        <div className="mt-1 text-xs text-muted">View inboxes (admin only).</div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href="/admin/purchase-requests"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+          >
+            Purchase Requests
+          </a>
+          <a
+            href="/admin/service-quotes"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+          >
+            Service Quotes
+          </a>
+          <a
+            href="/admin/contact-messages"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+          >
+            Contact Messages
+          </a>
+        </div>
+      </div>
+
 </div>
   );
 }

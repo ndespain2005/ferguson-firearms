@@ -636,6 +636,13 @@ function Toggle({
         <div className="mt-1 text-xs text-muted">View inboxes (admin only).</div>
         <div className="mt-3 flex flex-wrap gap-2">
           <a
+            href="/admin"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+          >
+            Admin Dashboard
+          </a>
+
+          <a
             href="/admin/purchase-requests"
             className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
           >

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import InfoRotator from "@/components/InfoRotator";
 import { Card, ButtonLink, Badge, SectionHeading } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
@@ -66,11 +67,7 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Badge>Dark-only Tactical</Badge>
-            <Badge>Embers + Scanline FX</Badge>
-            <Badge>Black/Red UI</Badge>
-          </div>
+          <InfoRotator />
         </Card>
       </div>
 

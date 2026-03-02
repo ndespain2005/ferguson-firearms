@@ -108,20 +108,6 @@ export default async function AdminTransfersPage() {
                 <div className="font-semibold text-white/85">{t.status || "Pending"}</div>
               </div>
             </div>
-<div>{t.phone}</div>
-                <div className="break-words">{t.email}</div>
-              </div>
-              <div className="text-white/70">
-                <div className="text-white/50 text-sm">Seller / Tracking</div>
-                <div>{t.seller_name}</div>
-                <div className="break-words">{t.tracking_number || "—"}</div>
-              </div>
-              <div className="text-white/70">
-                <div className="text-white/50 text-sm">Firearm</div>
-                <div>{t.firearm_type}</div>
-                <div className="break-words">{t.item_name || "—"}</div>
-              </div>
-            </div>
 
             <div className="mt-4 text-white/60">
               <span className="font-semibold text-white/80">Status:</span> {t.status || "Pending"}{" "}

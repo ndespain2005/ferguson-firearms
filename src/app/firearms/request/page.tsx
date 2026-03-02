@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Card, SectionHeading } from "@/components/ui";
-
-const EMAIL = "317XXXXXXX@fergusonfirearms.com"; // placeholder until domain is live
 
 type FormState = {
   name: string;
@@ -13,6 +11,8 @@ type FormState = {
   source: string;
   receivingFFL: string;
   notes: string;
+  // Honeypot (hidden)
+  company: string;
 };
 
 export default function FirearmsRequestPage() {
@@ -24,47 +24,81 @@ export default function FirearmsRequestPage() {
     source: "",
     receivingFFL: "",
     notes: "",
+    company: "",
   });
 
-  const mailto = useMemo(() => {
-    const subject = encodeURIComponent("Ferguson Firearms — Firearm Purchase Request");
-    const body = encodeURIComponent(
-      `Name: ${form.name}
-Phone: ${form.phone}
-Email: ${form.email}
+  const [status, setStatus] = useState<
+    | { state: "idle" }
+    | { state: "sending" }
+    | { state: "success"; message?: string }
+    | { state: "error"; message: string }
+  >({ state: "idle" });
 
-Firearm Requested:
-${form.firearm}
+  async function submit() {
+    setStatus({ state: "sending" });
 
-Where are you buying from (optional):
-${form.source}
+    try {
+      const res = await fetch("/api/purchase-request", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-Receiving FFL (name + city + email/phone):
-${form.receivingFFL}
+      const data = (await res.json().catch(() => null)) as any;
 
-Notes:
-${form.notes}
-`
-    );
-    return `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-  }, [form]);
+      if (!res.ok) {
+        setStatus({ state: "error", message: data?.error || "Something went wrong. Please try again." });
+        return;
+      }
+
+      // Clear form (keep it nice for customer)
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        firearm: "",
+        source: "",
+        receivingFFL: "",
+        notes: "",
+        company: "",
+      });
+
+      setStatus({ state: "success", message: data?.warning });
+    } catch {
+      setStatus({
+        state: "error",
+        message: "Network error. Please try again (or call the shop and we’ll take the request by phone).",
+      });
+    }
+  }
 
   return (
     <div className="space-y-10">
       <SectionHeading
         eyebrow="Request"
         title="Firearm Purchase Request"
-        subtitle="Submit details and we’ll respond with next steps. Firearms are handled through compliant Ship-to-FFL workflows."
+        subtitle="Send us the details and we’ll reply with pricing, availability, and next steps. All firearms are handled through compliant Ship-to-FFL workflows."
       />
 
-      <Card title="Request Form (Preview)">
+      <Card title="Request Form">
         <form
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            window.location.href = mailto;
+            if (status.state === "sending") return;
+            void submit();
           }}
         >
+          {/* Honeypot field (hidden from humans) */}
+          <input
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+            className="hidden"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1">
               <div className="text-xs text-muted">Name</div>
@@ -80,7 +114,7 @@ ${form.notes}
               <div className="text-xs text-muted">Phone</div>
               <input
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="317-XXXXXXX"
+                placeholder="317-XXX-XXXX"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
               />
@@ -141,13 +175,30 @@ ${form.notes}
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-card px-4 py-2 text-sm font-medium shadow-sm ring-offset-2 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-card px-4 py-2 text-sm font-medium shadow-sm ring-offset-2 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+            disabled={status.state === "sending"}
           >
-            Send Request
+            {status.state === "sending" ? "Sending..." : "Submit Request"}
           </button>
 
+          {status.state === "success" && (
+            <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm">
+              <div className="font-medium">Request received.</div>
+              <div className="text-muted">
+                We’ll reach out by email with next steps. {status.message ? `(${status.message})` : ""}
+              </div>
+            </div>
+          )}
+
+          {status.state === "error" && (
+            <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm">
+              <div className="font-medium">Couldn’t send request.</div>
+              <div className="text-muted">{status.message}</div>
+            </div>
+          )}
+
           <div className="text-xs text-muted">
-            Preview behavior: opens your email client with a pre-filled message.
+            Tip: for fastest turnaround, include an exact model, caliber, and a link or SKU if you have it.
           </div>
         </form>
       </Card>

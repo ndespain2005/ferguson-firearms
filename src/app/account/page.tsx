@@ -618,6 +618,18 @@ function Toggle({
           />
         </button>
       </div>
-    </div>
+    
+      <div className="rounded-2xl border border-border bg-background p-5">
+        <div className="text-sm font-medium">Admin</div>
+        <div className="mt-1 text-xs text-muted">View customer purchase requests (admin only).</div>
+        <a
+          href="/admin/purchase-requests"
+          className="mt-3 inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:opacity-90"
+        >
+          Open Purchase Requests
+        </a>
+      </div>
+
+</div>
   );
 }

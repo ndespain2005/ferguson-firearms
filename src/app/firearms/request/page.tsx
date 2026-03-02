@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card, SectionHeading } from "@/components/ui";
 
-const EMAIL = "nickdespain@fergusonfirearms.com"; // placeholder until domain is live
+const EMAIL = "317XXXXXXX@fergusonfirearms.com"; // placeholder until domain is live
 
 type FormState = {
   name: string;
@@ -80,7 +80,7 @@ ${form.notes}
               <div className="text-xs text-muted">Phone</div>
               <input
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="317-600-8758"
+                placeholder="317-XXXXXXX"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
               />

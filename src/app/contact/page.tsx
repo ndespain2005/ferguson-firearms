@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Card, SectionHeading } from "@/components/ui";
+import { SITE } from "@/lib/site-config";
 
-const PHONE = "317-600-8758";
-const EMAIL = "nickdespain@fergusonfirearms.com"; // placeholder until domain is live
+const PHONE = "317-XXXXXXX";
+const EMAIL = "{SITE.email}"; // placeholder until domain is live
 
 type FormState = {
   name: string;
@@ -36,7 +37,7 @@ export default function ContactPage() {
       <SectionHeading
         eyebrow="Contact"
         title="Indianapolis, IN — Wanamaker Area"
-        subtitle="Mon–Fri 8:00 AM – 6:00 PM • Phone 317-600-8758"
+        subtitle="Mon–Fri 8:00 AM – 6:00 PM • Phone 317-XXXXXXX"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -108,8 +109,7 @@ export default function ContactPage() {
                 <div className="text-xs text-muted">Phone</div>
                 <input
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="317-600-8758
-              "
+                  placeholder="317-XXXXXXX"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />

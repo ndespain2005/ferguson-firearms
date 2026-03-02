@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Card, ButtonLink, Badge, SectionHeading } from "@/components/ui";
+import { SITE } from "@/lib/site-config";
 
 const PHONE = "317-XXXXXXX";
 const HOURS = "Mon–Fri 8:00 AM – 6:00 PM";

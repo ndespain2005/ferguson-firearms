@@ -5,6 +5,7 @@ import { SignedIn, SignedOut, SignOutButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { ShoppingBag, User, Heart } from "lucide-react";
 import { useCart } from "@/components/cart-context";
+import { SITE } from "@/lib/site-config";
 
 const nav = [
   { href: "/", label: "Home" },

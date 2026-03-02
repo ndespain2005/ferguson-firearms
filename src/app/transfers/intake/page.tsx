@@ -1,186 +1,225 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { submitTransferIntake } from "./actions";
 import { Card, SectionHeading } from "@/components/ui";
+import { SITE } from "@/lib/site-config";
 
-const EMAIL = "317XXXXXXX@fergusonfirearms.com"; // placeholder until domain is live
-
-type FormState = {
-  name: string;
-  phone: string;
-  email: string;
-  seller: string;
-  orderNumber: string;
-  tracking: string;
-  firearmDetails: string;
-  pickupWindow: string;
-  notes: string;
-};
+type FirearmType = "Handgun" | "Rifle" | "Other";
 
 export default function TransferIntakePage() {
-  const [form, setForm] = useState<FormState>({
-    name: "",
-    phone: "",
-    email: "",
-    seller: "",
-    orderNumber: "",
-    tracking: "",
-    firearmDetails: "",
-    pickupWindow: "",
-    notes: "",
-  });
+  const params = useSearchParams();
+  const prefillItem = params.get("item") || "";
 
-  const mailto = useMemo(() => {
-    const subject = encodeURIComponent("Ferguson Firearms — Transfer Intake");
-    const body = encodeURIComponent(
-      `TRANSFER INTAKE
+  const [itemName, setItemName] = useState(prefillItem);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState(SITE.phone);
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [sellerName, setSellerName] = useState("");
+  const [sellerWebsite, setSellerWebsite] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [firearmType, setFirearmType] = useState<FirearmType>("Handgun");
+  const [serialNumber, setSerialNumber] = useState("");
+  const [expectedArrival, setExpectedArrival] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [successId, setSuccessId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-Name: ${form.name}
-Phone: ${form.phone}
-Email: ${form.email}
+  const canSubmit = useMemo(() => {
+    return fullName.trim() && phone.trim() && email.trim() && address.trim() && sellerName.trim();
+  }, [fullName, phone, email, address, sellerName]);
 
-Seller/Vendor: ${form.seller}
-Order #: ${form.orderNumber}
-Tracking #: ${form.tracking}
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    setError(null);
 
-Firearm Details:
-${form.firearmDetails}
-
-Preferred Pickup Window:
-${form.pickupWindow}
-
-Notes:
-${form.notes}
-`
-    );
-    return `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-  }, [form]);
+    try {
+      const res = await submitTransferIntake({
+        itemName: itemName.trim() || undefined,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        sellerName: sellerName.trim(),
+        sellerWebsite: sellerWebsite.trim() || undefined,
+        trackingNumber: trackingNumber.trim() || undefined,
+        firearmType,
+        serialNumber: serialNumber.trim() || undefined,
+        expectedArrival: expectedArrival.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      setSuccessId(String(res.id));
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 text-white">
       <SectionHeading
         eyebrow="Transfers"
-        title="Transfer Intake Form"
-        subtitle="Submit your order details and we’ll confirm next steps when your item ships/arrives."
+        title="Transfer Intake"
+        subtitle="Submit your ship-to-FFL details. We’ll confirm receipt and notify you when ready for pickup."
       />
 
-      <Card title="Intake (Preview)">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            window.location.href = mailto;
-          }}
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1">
-              <div className="text-xs text-muted">Name</div>
-              <input
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </label>
+      {successId ? (
+        <Card title="Submission received">
+          <div className="text-white/70 text-lg space-y-3">
+            <p>
+              You’re set. We’ve received your transfer intake and logged it in our system.
+            </p>
+            <p className="text-white/60">
+              Reference ID: <span className="font-semibold text-white">{successId}</span>
+            </p>
+            <p className="text-white/60">
+              Questions? Contact us at <span className="text-white font-semibold">{SITE.phone}</span> or{" "}
+              <span className="text-white font-semibold">{SITE.email}</span>.
+            </p>
+          </div>
+        </Card>
+      ) : (
+        <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <Card title="Customer info">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Full name" value={fullName} onChange={setFullName} required />
+                <Field label="Phone" value={phone} onChange={setPhone} required />
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Email" value={email} onChange={setEmail} required />
+                <Field label="Address" value={address} onChange={setAddress} required />
+              </div>
+            </Card>
 
-            <label className="space-y-1">
-              <div className="text-xs text-muted">Phone</div>
-              <input
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                placeholder="317-XXXXXXX"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </label>
+            <Card title="Transfer details">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Item (optional)" value={itemName} onChange={setItemName} placeholder="e.g., Glock 19 Gen 5" />
+                <Select label="Firearm type" value={firearmType} onChange={(v) => setFirearmType(v as FirearmType)} />
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Seller name" value={sellerName} onChange={setSellerName} required placeholder="Vendor / Individual" />
+                <Field label="Seller website (optional)" value={sellerWebsite} onChange={setSellerWebsite} placeholder="https://..." />
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Tracking # (optional)" value={trackingNumber} onChange={setTrackingNumber} />
+                <Field label="Expected arrival (optional)" value={expectedArrival} onChange={setExpectedArrival} placeholder="MM/DD or date" />
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Serial # (optional)" value={serialNumber} onChange={setSerialNumber} />
+                <Field label="Notes (optional)" value={notes} onChange={setNotes} placeholder="Anything we should know?" />
+              </div>
+            </Card>
           </div>
 
-          <label className="space-y-1">
-            <div className="text-xs text-muted">Email</div>
-            <input
-              type="email"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-            />
-          </label>
+          <div className="space-y-6">
+            <Card title="Confirm & submit">
+              <div className="text-white/70 text-lg space-y-3">
+                <p>
+                  Submitting this form logs your transfer into our system and helps us move fast when it arrives.
+                </p>
+                <ul className="list-disc pl-5 space-y-2 text-white/60">
+                  <li>Bring valid ID for pickup.</li>
+                  <li>Transfers are completed in-store per compliance requirements.</li>
+                  <li>We’ll notify you after arrival processing.</li>
+                </ul>
+              </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1">
-              <div className="text-xs text-muted">Seller / Vendor</div>
-              <input
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                value={form.seller}
-                onChange={(e) => setForm({ ...form, seller: e.target.value })}
-                placeholder="Website / store name"
-                required
-              />
-            </label>
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-600/15 p-4 text-red-200">
+                  {error}
+                </div>
+              ) : null}
 
-            <label className="space-y-1">
-              <div className="text-xs text-muted">Order #</div>
-              <input
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                value={form.orderNumber}
-                onChange={(e) => setForm({ ...form, orderNumber: e.target.value })}
-                placeholder="Order number"
-              />
-            </label>
-          </div>
+              <button
+                type="submit"
+                disabled={!canSubmit || submitting}
+                className="btn-red-glow glow-pulse mt-5 w-full rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 hover:shadow-red-600/35 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? "Submitting…" : "Submit intake"}
+              </button>
 
-          <label className="space-y-1">
-            <div className="text-xs text-muted">Tracking # (optional)</div>
-            <input
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={form.tracking}
-              onChange={(e) => setForm({ ...form, tracking: e.target.value })}
-              placeholder="UPS/USPS/FedEx tracking"
-            />
-          </label>
+              <div className="mt-4 text-xs text-white/45">
+                This form is for transfer intake only — it does not guarantee availability and does not process payments.
+              </div>
+            </Card>
 
-          <label className="space-y-1">
-            <div className="text-xs text-muted">Firearm details</div>
-            <textarea
-              className="min-h-28 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={form.firearmDetails}
-              onChange={(e) => setForm({ ...form, firearmDetails: e.target.value })}
-              placeholder="Make/model, caliber, SKU (if known)"
-              required
-            />
-          </label>
-
-          <label className="space-y-1">
-            <div className="text-xs text-muted">Preferred pickup window</div>
-            <input
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={form.pickupWindow}
-              onChange={(e) => setForm({ ...form, pickupWindow: e.target.value })}
-              placeholder="Example: Weekdays after 3pm"
-            />
-          </label>
-
-          <label className="space-y-1">
-            <div className="text-xs text-muted">Notes</div>
-            <textarea
-              className="min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Anything else we should know?"
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-card px-4 py-2 text-sm font-medium shadow-sm ring-offset-2 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            Submit Transfer Intake
-          </button>
-
-          <div className="text-xs text-muted">
-            Preview behavior: opens your email client with a pre-filled message.
+            <Card title="Contact">
+              <div className="text-white/70 text-lg">
+                <div>{SITE.city}</div>
+                <div className="mt-2">
+                  <div className="text-white/60">Phone</div>
+                  <div className="font-semibold text-white">{SITE.phone}</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-white/60">Email</div>
+                  <div className="font-semibold text-white">{SITE.email}</div>
+                </div>
+              </div>
+            </Card>
           </div>
         </form>
-      </Card>
+      )}
     </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  required,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block space-y-2">
+      <div className="text-white/70">
+        {label}
+        {required ? <span className="text-red-400"> *</span> : null}
+      </div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
+      />
+    </label>
+  );
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block space-y-2">
+      <div className="text-white/70">{label}</div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 outline-none focus:ring-2 focus:ring-red-500/40"
+      >
+        <option value="Handgun">Handgun</option>
+        <option value="Rifle">Rifle</option>
+        <option value="Other">Other</option>
+      </select>
+    </label>
   );
 }

@@ -6,21 +6,35 @@ import { useMemo, useState } from "react";
 import { Card, Badge, Price, SectionHeading } from "@/components/ui";
 import { Product, useCart } from "@/components/cart-context";
 
-type Item = Product & { image: string; tag?: string };
+type Item = Product & { image: string; tag?: string; stock: number };
 
 const ACCESSORIES: Item[] = [
-  { id: "acc-1", name: "Premium Sling (QD)", category: "Accessories", price: 59.0, image: "/products/sling.png", tag: "Best Seller" },
-  { id: "acc-2", name: "Weapon Light Mount", category: "Accessories", price: 34.0, image: "/products/light-mount.png" },
-  { id: "opt-1", name: "Micro Red Dot", category: "Optics", price: 199.0, image: "/products/red-dot.png", tag: "Featured" },
-  { id: "opt-2", name: "Magnifier (Flip)", category: "Optics", price: 149.0, image: "/products/magnifier.png" },
-  { id: "par-1", name: "Enhanced Trigger Guard", category: "Parts", price: 14.0, image: "/products/trigger-guard.png" },
-  { id: "par-2", name: "Buffer Spring Kit", category: "Parts", price: 19.0, image: "/products/buffer-kit.png" },
+  { id: "acc-1", name: "Premium Sling (QD)", category: "Accessories", price: 59.0, image: "/products/sling.png", tag: "Best Seller" , stock: 14 },
+  { id: "acc-2", name: "Weapon Light Mount", category: "Accessories", price: 34.0, image: "/products/light-mount.png" , stock: 12 },
+  { id: "opt-1", name: "Micro Red Dot", category: "Optics", price: 199.0, image: "/products/red-dot.png", tag: "Featured" , stock: 10 },
+  { id: "opt-2", name: "Magnifier (Flip)", category: "Optics", price: 149.0, image: "/products/magnifier.png" , stock: 8 },
+  { id: "par-1", name: "Enhanced Trigger Guard", category: "Parts", price: 14.0, image: "/products/trigger-guard.png" , stock: 6 },
+  { id: "par-2", name: "Buffer Spring Kit", category: "Parts", price: 19.0, image: "/products/buffer-kit.png" , stock: 4 },
 ];
 
 const APPAREL: Item[] = [
-  { id: "app-1", name: "FF Logo Tee", category: "Apparel", price: 29.0, image: "/products/logo-tee.png", tag: "New" },
-  { id: "app-2", name: "Structured Hat", category: "Apparel", price: 32.0, image: "/products/hat.png" },
+  { id: "app-1", name: "FF Logo Tee", category: "Apparel", price: 29.0, image: "/products/logo-tee.png", tag: "New" , stock: 9 },
+  { id: "app-2", name: "Structured Hat", category: "Apparel", price: 32.0, image: "/products/hat.png" , stock: 7 },
 ];
+const RIFLES: Item[] = [
+  { id: "rif-1", name: "AR-15 16” (Example Listing)", category: "Rifles", price: 0, image: "/products/rifle-1.png", tag: "Request Only", stock: -1 },
+  { id: "rif-2", name: "AK Pattern (Example Listing)", category: "Rifles", price: 0, image: "/products/rifle-2.png", tag: "Request Only", stock: -1 },
+];
+
+const HANDGUNS: Item[] = [
+  { id: "hg-1", name: "Glock 19 Gen 5 (Example Listing)", category: "Handguns", price: 0, image: "/products/handgun-1.png", tag: "Request Only", stock: -1 },
+  { id: "hg-2", name: "Sig P320 (Example Listing)", category: "Handguns", price: 0, image: "/products/handgun-2.png", tag: "Request Only", stock: -1 },
+];
+
+const COLLECTIBLES: Item[] = [
+  { id: "col-1", name: "Collector Piece (Example Listing)", category: "Collectibles", price: 0, image: "/products/collectible-1.png", tag: "Request Only", stock: -1 },
+];
+
 
 const FEATURED: Item[] = [
   ACCESSORIES[2],
@@ -133,11 +147,22 @@ function ProductCard({ item, onAdd }: { item: Item; onAdd: (p: Product) => void 
         </div>
       </div>
 
+      <div className={`mt-2 text-sm font-semibold ${item.stock > 0 ? "text-white/70" : "text-red-300"}`}>
+        {item.stock < 0 ? "Request only" : item.stock > 0 ? `In stock: ${item.stock}` : "Out of stock"}
+      </div>
+
       <button
-        onClick={() => onAdd(item)}
-        className="btn-red-glow glow-pulse mt-5 w-full rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 hover:shadow-red-600/35 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+        onClick={() => {
+          if (item.stock < 0) {
+            window.location.href = `/transfers/intake?item=${encodeURIComponent(item.name)}`;
+            return;
+          }
+          onAdd(item);
+        }}
+        disabled={item.stock === 0}
+        className="btn-red-glow glow-pulse mt-5 w-full rounded-2xl bg-red-600 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 hover:shadow-red-600/35 focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Add to Cart
+        {item.stock < 0 ? "Request Availability" : item.stock > 0 ? "Add to Cart" : "Out of Stock"}
       </button>
     </div>
   );
@@ -220,14 +245,47 @@ function FirearmSection({
   );
 }
 
+function matchesQuery(name: string, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return name.toLowerCase().includes(q);
+}
+
 export default function ShopPage() {
   const { add } = useCart();
   const [filter, setFilter] = useState<Filter>("All");
+  const [query, setQuery] = useState("");
+
+const allInventory = useMemo(() => {
+  const items = [...ACCESSORIES, ...RIFLES, ...HANDGUNS, ...COLLECTIBLES, ...APPAREL];
+  return items.filter((p) => matchesQuery(p.name, query));
+}, [query]);
+
+const filteredMain = useMemo(() => {
+  if (filter === "All") return allInventory;
+  return allInventory.filter((p) => p.category === filter);
+}, [allInventory, filter]);
 
   const filteredAccessories = useMemo(() => {
-    if (filter === "All") return ACCESSORIES;
-    return ACCESSORIES.filter((p) => p.category === filter);
+  let items = ACCESSORIES;
+  if (filter !== "All") items = items.filter((p) => p.category === filter);
+  items = items.filter((p) => matchesQuery(p.name, query));
+  return items;
+}, [filter, query]);
+
   }, [filter]);
+
+  const filteredApparel = useMemo(() => {
+    return APPAREL.filter((p) => matchesQuery(p.name, query));
+  }, [query]);
+
+  const filteredFeatured = useMemo(() => {
+    return FEATURED.filter((p) => matchesQuery(p.name, query));
+  }, [query]);
+
+  const filteredRecent = useMemo(() => {
+    return RECENT.filter((p) => matchesQuery(p.name, query));
+  }, [query]);
 
   return (
     <div className="space-y-10 text-white">
@@ -239,7 +297,9 @@ export default function ShopPage() {
         />
         <div className="flex w-full max-w-xl items-center gap-2 md:justify-end">
           <input
-            placeholder="Search (preview)…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
             className="w-full rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
           />
         </div>
@@ -253,7 +313,7 @@ export default function ShopPage() {
 
       <Card title="Featured Products">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURED.map((p) => (
+          {filteredFeatured.map((p) => (
             <ProductCard key={p.id} item={p} onAdd={add} />
           ))}
         </div>
@@ -281,7 +341,7 @@ export default function ShopPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredAccessories.map((p) => (
+          {filteredMain.filter((p)=>p.category==="Accessories").map((p) => (
             <ProductCard key={p.id} item={p} onAdd={add} />
           ))}
         </div>
@@ -293,7 +353,7 @@ export default function ShopPage() {
       <section id="apparel" className="scroll-mt-32 space-y-5">
         <div className="text-2xl font-semibold">Apparel</div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {APPAREL.map((p) => (
+          {filteredMain.filter((p)=>p.category==="Apparel").map((p) => (
             <ProductCard key={p.id} item={p} onAdd={add} />
           ))}
         </div>
@@ -338,7 +398,7 @@ export default function ShopPage() {
 
       <Card title="Recently Added">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {RECENT.map((p) => (
+          {filteredRecent.map((p) => (
             <ProductCard key={p.id} item={p} onAdd={add} />
           ))}
         </div>

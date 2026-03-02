@@ -1,4 +1,5 @@
 import { Card, ButtonLink, SectionHeading } from "@/components/ui";
+import { SITE } from "@/lib/site-config";
 
 export default function TransfersPage() {
   return (

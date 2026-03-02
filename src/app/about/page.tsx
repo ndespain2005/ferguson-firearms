@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Card, Badge, ButtonLink, SectionHeading } from "@/components/ui";
+import { SITE } from "@/lib/site-config";
 
 const CITY = "Indianapolis, IN";
 const AREA = "Wanamaker";
-const HOURS = "Mon-Fri 8:00 AM – 6:00 PM";
+const HOURS = "Mon–Fri 8:00 AM – 6:00 PM";
 
 export default function AboutPage() {
   return (

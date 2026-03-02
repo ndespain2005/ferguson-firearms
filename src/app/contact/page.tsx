@@ -5,7 +5,7 @@ import { Card, SectionHeading } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
 const PHONE = "317-600-8758";
-const EMAIL = "nickdespain@gergusonfirearms.com"; // placeholder until domain is live
+const EMAIL = "nickdespain@fergusonfirearms.com"; // placeholder until domain is live
 
 type FormState = {
   name: string;

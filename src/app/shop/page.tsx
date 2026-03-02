@@ -188,7 +188,53 @@ export default function ShopPage() {
         </div>
       </Card>
 
-      <div className="text-white/60 text-sm">
+      {/* Featured sections */}
+{filter === "All" && !query && availability === "All" && !brand && !caliber && !wishlistOnly ? (
+  <div className="space-y-10">
+    <CategorySection
+      title="Rifles"
+      subtitle="Request-only listings — intake required."
+      items={INVENTORY.filter((p) => p.category === "Rifles").slice(0, 6)}
+      onViewAll={() => setFilter("Rifles")}
+      onPrimary={primaryAction}
+      onQuick={setQuick}
+      wished={(id) => wishlist.has(id)}
+      onWish={(id) => wishlist.toggle(id)}
+    />
+    <CategorySection
+      title="Handguns"
+      subtitle="Request-only listings — intake required."
+      items={INVENTORY.filter((p) => p.category === "Handguns").slice(0, 6)}
+      onViewAll={() => setFilter("Handguns")}
+      onPrimary={primaryAction}
+      onQuick={setQuick}
+      wished={(id) => wishlist.has(id)}
+      onWish={(id) => wishlist.toggle(id)}
+    />
+    <CategorySection
+      title="Accessories"
+      subtitle="In-stock items — add to cart."
+      items={INVENTORY.filter((p) => p.category === "Accessories").slice(0, 6)}
+      onViewAll={() => setFilter("Accessories")}
+      onPrimary={primaryAction}
+      onQuick={setQuick}
+      wished={(id) => wishlist.has(id)}
+      onWish={(id) => wishlist.toggle(id)}
+    />
+    <CategorySection
+      title="Apparel"
+      subtitle="In-stock items — add to cart."
+      items={INVENTORY.filter((p) => p.category === "Apparel").slice(0, 6)}
+      onViewAll={() => setFilter("Apparel")}
+      onPrimary={primaryAction}
+      onQuick={setQuick}
+      wished={(id) => wishlist.has(id)}
+      onWish={(id) => wishlist.toggle(id)}
+    />
+  </div>
+) : null}
+
+<div className="text-white/60 text-sm">
         Showing <span className="text-white/80 font-semibold">{items.length}</span> items
         {wishlistOnly ? <span className="ml-2">(wishlist)</span> : null}
       </div>
@@ -215,6 +261,57 @@ export default function ShopPage() {
           onPrimary={() => primaryAction(quick)}
         />
       ) : null}
+    </div>
+  );
+}
+
+function CategorySection({
+  title,
+  subtitle,
+  items,
+  onViewAll,
+  onPrimary,
+  onQuick,
+  wished,
+  onWish,
+}: {
+  title: string;
+  subtitle: string;
+  items: InventoryItem[];
+  onViewAll: () => void;
+  onPrimary: (item: InventoryItem) => void;
+  onQuick: (item: InventoryItem) => void;
+  wished: (id: string) => boolean;
+  onWish: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <div className="text-2xl font-semibold tracking-tight">{title}</div>
+          <div className="mt-1 text-white/60 text-sm">{subtitle}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
+        >
+          View all
+        </button>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((p) => (
+          <ProductCard
+            key={p.id}
+            item={p}
+            onPrimary={() => onPrimary(p)}
+            onQuick={() => onQuick(p)}
+            wished={wished(p.id)}
+            onWish={() => onWish(p.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -255,7 +352,7 @@ function ProductCard({
     <div className="relative group">
       <Card title="">
         <Link href={`/shop/${encodeURIComponent(item.id)}`} className="block">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 transition group-hover:border-red-500/30 group-hover:shadow-[0_0_0_1px_rgba(239,68,68,0.15),0_0_30px_rgba(239,68,68,0.10)]">
+          <div className="relative h-52 overflow-hidden rounded-2xl border border-white/10 bg-black/35 transition group-hover:border-red-500/30 group-hover:shadow-[0_0_0_1px_rgba(239,68,68,0.15),0_0_30px_rgba(239,68,68,0.10)]">
              <Image src={item.image} alt={item.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
           </div>
         </Link>
@@ -363,7 +460,7 @@ function QuickView({
         </div>
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+          <div className="relative h-72 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
              <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
           </div>
 

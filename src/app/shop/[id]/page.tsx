@@ -24,7 +24,7 @@ export default function ProductDetailPage({ params }: any) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+          <div className="relative h-[360px] overflow-hidden rounded-2xl border border-white/10 bg-black/35">
              <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
           </div>
 

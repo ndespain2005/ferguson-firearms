@@ -203,9 +203,9 @@ export default function AccountPage() {
   }
 
   const wishlistItems = useMemo(() => {
-    const set = new Set(wishlist.ids);
+    const set = new Set(wishlist.list);
     return INVENTORY.filter((i) => set.has(i.id));
-  }, [wishlist.ids]);
+  }, [wishlist.list]);
 
   const displayName = user?.firstName || user?.fullName || "Account";
 

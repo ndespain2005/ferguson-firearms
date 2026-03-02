@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Card, Badge, SectionHeading } from "@/components/ui";
@@ -251,11 +252,11 @@ function ProductCard({
   const out = item.stock === 0;
 
   return (
-    <div className="relative">
+    <div className="relative group">
       <Card title="">
         <Link href={`/shop/${encodeURIComponent(item.id)}`} className="block">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-            <img src={item.image} alt={item.name} className="h-52 w-full object-cover" />
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35 transition group-hover:border-red-500/30 group-hover:shadow-[0_0_0_1px_rgba(239,68,68,0.15),0_0_30px_rgba(239,68,68,0.10)]">
+             <Image src={item.image} alt={item.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
           </div>
         </Link>
 
@@ -363,7 +364,7 @@ function QuickView({
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-            <img src={item.image} alt={item.name} className="h-72 w-full object-cover" />
+             <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
           </div>
 
           <div className="space-y-4">

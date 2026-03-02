@@ -85,6 +85,20 @@ export const INVENTORY: InventoryItem[] = [
     condition: "New",
     description: "Premium cotton tee with subtle tactical branding.",
   },
+{
+  id: "app-2",
+  name: "Ferguson Firearms Hoodie (Black)",
+  category: "Apparel",
+  price: 55,
+  image: "/products/apparel-hoodie.png",
+  tag: "New",
+  stock: 6,
+  brand: "Ferguson",
+  sku: "FF-APP-HOOD01",
+  condition: "New",
+  description: "Premium heavyweight hoodie with Ferguson Firearms logo. Built for range days and cold mornings.",
+},
+
 
   // Rifles (request-only)
   {

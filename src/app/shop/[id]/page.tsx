@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { INVENTORY, getItemById } from "@/lib/inventory";
 import { Card, SectionHeading, Badge } from "@/components/ui";
@@ -24,7 +25,7 @@ export default function ProductDetailPage({ params }: any) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="">
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-            <img src={item.image} alt={item.name} className="h-[360px] w-full object-cover" />
+             <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">

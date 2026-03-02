@@ -318,7 +318,7 @@ export default function AccountPage() {
                 columns={["Submitted", "Status", "Details"]}
                 rows={purchaseRows.map((r) => [
                   formatLocal(r.created_at),
-                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <Badge key={r.id}>{r.status || "New"}</Badge>,
                   <span key={r.id + "-d"} className="text-sm text-muted">{r.firearm}</span>,
                 ])}
                 empty="No purchase requests yet."
@@ -331,7 +331,7 @@ export default function AccountPage() {
                 columns={["Submitted", "Status", "Details"]}
                 rows={quoteRows.map((r) => [
                   formatLocal(r.created_at),
-                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <Badge key={r.id}>{r.status || "New"}</Badge>,
                   <span key={r.id + "-d"} className="text-sm text-muted">{r.service_type}: {r.description}</span>,
                 ])}
                 empty="No quote requests yet."
@@ -344,7 +344,7 @@ export default function AccountPage() {
                 columns={["Submitted", "Status", "Message"]}
                 rows={contactRows.map((r) => [
                   formatLocal(r.created_at),
-                  <Badge key={r.id} tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>,
+                  <Badge key={r.id}>{r.status || "New"}</Badge>,
                   <span key={r.id + "-m"} className="text-sm text-muted">{r.topic}: {r.message}</span>,
                 ])}
                 empty="No messages yet."
@@ -368,7 +368,7 @@ export default function AccountPage() {
                     <div key={t.id} className="rounded-2xl border border-border bg-background p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="font-medium">{t.item_name || "Transfer"}</div>
-                        <Badge tone={toneForStatus(t.status)}>{t.status || "Pending"}</Badge>
+                        <Badge>{t.status || "Pending"}</Badge>
                       </div>
                       <div className="mt-2 text-sm text-muted">
                         Submitted: {formatLocal(t.created_at)} • Seller: {t.seller_name || "—"} • Tracking:{" "}
@@ -517,7 +517,7 @@ function Recent({
                 <div className="text-sm text-muted">{formatLocal(r.created_at)}</div>
                 <div className="truncate text-sm">{r.text}</div>
               </div>
-              <Badge tone={toneForStatus(r.status)}>{r.status || "New"}</Badge>
+              <Badge>{r.status || "New"}</Badge>
             </div>
           ))}
         </div>

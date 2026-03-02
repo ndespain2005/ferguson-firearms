@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { Card, SectionHeading } from "@/components/ui";
 
-const PHONE = "317-XXXXXXX";
-const EMAIL = "317XXXXXXX@fergusonfirearms.com"; // placeholder until domain is live
+const PHONE = "317-600-8758";
+const EMAIL = "nickdespain@fergusonfirearms.com"; // placeholder until domain is live
 
 type FormState = {
   name: string;

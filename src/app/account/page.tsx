@@ -33,7 +33,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!user) return;
-    const meta = (user.publicMetadata || {}) as any;
+    const meta = (user.unsafeMetadata || {}) as any;
 
     setProfile({
       name: (user.fullName || meta.name || "").toString(),

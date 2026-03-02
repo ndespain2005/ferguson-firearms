@@ -300,10 +300,10 @@ export default function AccountPage() {
               <Card title="Preferences snapshot">
                 <div className="text-sm text-muted space-y-2">
                   <div>
-                    <span className="text-foreground font-medium">Email updates:</span> {prefs.emailUpdates ? "On" : "Off"}
+                    <span className="text-foreground font-medium">Marketing emails:</span> {prefs.marketingEmails ? "On" : "Off"}
                   </div>
                   <div>
-                    <span className="text-foreground font-medium">Weekly deals:</span> {prefs.weeklyDeals ? "On" : "Off"}
+                    <span className="text-foreground font-medium">Transfer-ready texts:</span> {prefs.transferReadyTexts ? "On" : "Off"}
                   </div>
                 </div>
               </Card>
@@ -441,16 +441,16 @@ export default function AccountPage() {
           <Card title="Preferences">
             <div className="space-y-4">
               <ToggleRow
-                title="Email updates"
-                desc="Get status updates on your requests."
-                value={prefs.emailUpdates}
-                onChange={(v) => update({ emailUpdates: v })}
+                title="Marketing emails"
+                desc="Receive occasional store updates and promotions."
+                value={prefs.marketingEmails}
+                onChange={(v) => update({ marketingEmails: v })}
               />
               <ToggleRow
-                title="Weekly deals"
-                desc="Receive weekly deal highlights."
-                value={prefs.weeklyDeals}
-                onChange={(v) => update({ weeklyDeals: v })}
+                title="Transfer-ready texts"
+                desc="Allow SMS notifications when a transfer is ready (if enabled later)."
+                value={prefs.transferReadyTexts}
+                onChange={(v) => update({ transferReadyTexts: v })}
               />
             </div>
           </Card>

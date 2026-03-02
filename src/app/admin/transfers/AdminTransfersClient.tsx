@@ -76,8 +76,6 @@ function downloadCsv(filename: string, csvText: string) {
   URL.revokeObjectURL(url);
 }
 
-const STATUSES = ["Pending", "Received", "Ready", "Completed"] as const;
-
 function formatInSiteTz(iso: string) {
   try {
     return new Intl.DateTimeFormat("en-US", {

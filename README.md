@@ -31,3 +31,6 @@ This project uses Clerk for email/password accounts.
 - /sign-in
 - /sign-up
 - /account
+
+### Clerk routing note
+Sign-in/sign-up pages use `routing="path"` with App Router catch-all routes.

@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
       <div className="glow-card rounded-2xl border border-white/10 bg-black/55 p-6">
-        <SignUp
+        <SignUp routing="path" path="/sign-up" signInUrl="/sign-in"
           appearance={{
             elements: {
               card: "bg-transparent shadow-none border-0",

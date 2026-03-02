@@ -59,7 +59,7 @@ export default function AccountPage() {
       });
 
       await user.update({
-        unsafeMetadata: {
+        publicMetadata: {
           name: profile.name,
           phone: profile.phone,
           address1: profile.address1,

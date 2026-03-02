@@ -49,6 +49,7 @@ export default function Page() {
             routing="path"
             path="/sign-in"
             signUpUrl="/sign-up"
+            afterSignInUrl="/account"
             appearance={{
               elements: {
                 card: "bg-transparent shadow-none border-0 p-0",

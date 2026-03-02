@@ -47,8 +47,9 @@ export default function Page() {
         <div className="glow-card rounded-3xl border border-white/10 bg-black/55 p-6 md:p-8">
           <SignUp
             routing="path"
-            path="/sign-in"
+            path="/sign-up"
             signInUrl="/sign-in"
+            afterSignUpUrl="/account"
             appearance={{
               elements: {
                 card: "bg-transparent shadow-none border-0 p-0",

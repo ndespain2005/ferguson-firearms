@@ -5,9 +5,7 @@ import AdminPurchaseRequestsClient from "./AdminPurchaseRequestsClient";
 
 type PurchaseRequestRow = {
   id: string;
-  created_at: string;
-  updated_at: string | null;
-  name: string;
+  created_at: string;  name: string;
   phone: string | null;
   email: string;
   firearm: string;
@@ -49,7 +47,7 @@ export default async function AdminPurchaseRequestsPage() {
     const sb = supabaseAdmin();
     const { data, error } = await sb
       .from("purchase_requests")
-      .select("id, created_at, updated_at, name, phone, email, firearm, source, receiving_ffl, notes, status, internal_notes")
+      .select("id, created_at, name, phone, email, firearm, source, receiving_ffl, notes, status, internal_notes")
       .order("created_at", { ascending: false })
       .limit(250);
 

@@ -1,4 +1,9 @@
 -- Starter table for Ferguson Firearms purchase request inbox
+-- NOTE:
+-- If you created purchase_requests on an earlier version and you’re seeing
+-- “column purchase_requests.updated_at does not exist”, run the migration lines
+-- near the bottom of this file (ALTER TABLE … ADD COLUMN …).
+-- The site will work without updated_at after v49, but adding it is recommended.
 -- Run this in Supabase SQL editor (or via migrations)
 
 create table if not exists public.purchase_requests (

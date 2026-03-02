@@ -1,8 +1,12 @@
 "use client";
 
+import { ClerkProvider } from "@clerk/nextjs";
 import { CartProvider } from "@/components/cart-context";
 
 export function ThemeProviders({ children }: { children: React.ReactNode }) {
-  // Dark-only tactical branding
-  return <CartProvider>{children}</CartProvider>;
+  return (
+    <ClerkProvider>
+      <CartProvider>{children}</CartProvider>
+    </ClerkProvider>
+  );
 }

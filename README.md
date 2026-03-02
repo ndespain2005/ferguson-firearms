@@ -19,3 +19,15 @@ Open http://localhost:3000
 
 ## Windows note
 Do NOT run from OneDrive-synced folders. Use `C:\Dev\...`.
+
+## Accounts (Clerk)
+This project uses Clerk for email/password accounts.
+
+### Required environment variables (Vercel)
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+- CLERK_SECRET_KEY
+
+### Routes
+- /sign-in
+- /sign-up
+- /account

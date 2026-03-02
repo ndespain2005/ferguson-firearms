@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SignedIn, SignedOut, SignOutButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { ShoppingBag, User, Heart } from "lucide-react";
 import { useCart } from "@/components/cart-context";
@@ -82,17 +83,38 @@ export default function SiteHeader() {
             <span className="hidden sm:inline">Wishlist</span>
           </button>
 
-          <button
-            type="button"
+          <Link
+            href="/account"
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-white shadow-lg backdrop-blur transition hover:bg-black/70"
-            aria-label="Account (placeholder)"
-            title="Account (placeholder)"
+            aria-label="Account"
+            title="Account"
           >
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Account</span>
-          </button>
+          </Link>
+
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-white shadow-lg backdrop-blur transition hover:bg-black/70"
+            >
+              Sign In
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <SignOutButton>
+              <button
+                type="button"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-white shadow-lg backdrop-blur transition hover:bg-black/70"
+              >
+                Sign Out
+              </button>
+            </SignOutButton>
+          </SignedIn>
 
           <CartIcon />
+
 
         </div>
       </div>

@@ -59,18 +59,14 @@ export default function AccountPage() {
       });
 
       await user.update({
-  unsafeMetadata: {
-    name: profile.name,
-    phone: profile.phone,
-    address1: profile.address1,
-    address2: profile.address2,
-    city: profile.city,
-    state: profile.state,
-    zip: profile.zip,
-  },
-});
-  },
-});
+        publicMetadata: {
+          name: profile.name,
+          phone: profile.phone,
+          address1: profile.address1,
+          address2: profile.address2,
+          city: profile.city,
+          state: profile.state,
+          zip: profile.zip,
         },
       });
 

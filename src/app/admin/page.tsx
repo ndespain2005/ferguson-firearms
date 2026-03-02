@@ -70,7 +70,7 @@ export default async function AdminHomePage() {
                   <div className="mt-2 text-3xl font-semibold text-white">{s.value}</div>
                   <div className="mt-2 text-xs text-white/45">{s.hint}</div>
                 </div>
-                <Badge tone={s.value > 0 ? "danger" : "muted"}>{s.value > 0 ? "Action" : "Clear"}</Badge>
+                <Badge>{s.value > 0 ? "Action" : "Clear"}</Badge>
               </div>
             </div>
           </a>

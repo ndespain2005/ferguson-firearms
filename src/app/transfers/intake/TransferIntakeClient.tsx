@@ -14,7 +14,7 @@ export default function TransferIntakeClient() {
 
   const [itemName, setItemName] = useState(prefillItem);
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState<string>(SITE.phone);
+  const [phone, setPhone] = useState<string>("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [sellerName, setSellerName] = useState("");

@@ -59,3 +59,17 @@ export async function deleteTransfers(params: { ids: number[] }) {
   if (error) throw new Error(error.message);
   return { ok: true as const };
 }
+
+export async function updateTransferNotes(params: { id: number; notes: string }) {
+  const gate = await requireAdmin();
+  if (!gate.ok) throw new Error("Unauthorized");
+
+  const db = supabaseAdmin();
+  const { error } = await db
+    .from("transfers")
+    .update({ notes: params.notes })
+    .eq("id", params.id);
+
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}

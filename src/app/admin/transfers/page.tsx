@@ -20,7 +20,7 @@ export default async function AdminTransfersPage() {
 
   if (error) {
     return (
-      <div className="space-y-10 text-white">
+      <div className="space-y-8 text-white">
         <SectionHeading eyebrow="Admin" title="Transfers" subtitle="Error loading transfers." />
         <Card title="Error">
           <div className="text-white/70">{error.message}</div>
@@ -30,7 +30,7 @@ export default async function AdminTransfersPage() {
   }
 
   return (
-    <div className="space-y-10 text-white">
+    <div className="space-y-8 text-white">
       <SectionHeading
         eyebrow="Admin"
         title="Transfers Dashboard"

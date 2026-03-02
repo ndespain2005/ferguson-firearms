@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { updateTransferStatus, updateTransferStatuses, deleteTransfer, deleteTransfers } from "./actions";
+import { updateTransferStatus, updateTransferStatuses, deleteTransfer, deleteTransfers, updateTransferNotes } from "./actions";
 import { Card, Badge } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
@@ -109,6 +109,8 @@ export default function AdminTransfersClient({ initial }: { initial: TransferRow
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [noteDrafts, setNoteDrafts] = useState<Record<number, string>>({});
+  const [noteSaving, setNoteSaving] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
   setPage(1);
@@ -160,7 +162,36 @@ const filtered = useMemo(() => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, pageSafe]);
 
-  function isSelected(id: number) {
+  function getNoteDraft(t: TransferRow) {
+  return noteDrafts[t.id] ?? (t.notes || "");
+}
+
+function setNoteDraft(id: number, v: string) {
+  setNoteDrafts((prev) => ({ ...prev, [id]: v }));
+}
+
+function saveNotes(id: number) {
+  const notes = (noteDrafts[id] ?? "").trim();
+  setNoteSaving((p) => ({ ...p, [id]: true }));
+  setMsg(null);
+
+  // optimistic update
+  setRows((prev) => prev.map((r) => (r.id === id ? { ...r, notes } : r)));
+
+  startTransition(async () => {
+    try {
+      await updateTransferNotes({ id, notes });
+      setMsg(`Notes saved for #${id}.`);
+      setTimeout(() => setMsg(null), 1500);
+    } catch (e: any) {
+      setMsg(e?.message || "Failed to save notes.");
+    } finally {
+      setNoteSaving((p) => ({ ...p, [id]: false }));
+    }
+  });
+}
+
+function isSelected(id: number) {
   return !!selected[id];
 }
 
@@ -275,14 +306,14 @@ function onChangeStatus(id: number, next: string) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search name, phone, tracking, item, notes…"
-              className="w-full sm:w-[420px] rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
+              className="w-full sm:w-[420px] rounded-2xl border border-white/10 bg-black/45 px-5 py-2.5 text-sm text-white/90 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="w-full sm:w-[220px] rounded-2xl border border-white/10 bg-black/45 px-5 py-3 text-base text-white/90 outline-none focus:ring-2 focus:ring-red-500/40"
+            className="w-full sm:w-[220px] rounded-2xl border border-white/10 bg-black/45 px-5 py-2.5 text-sm text-white/90 outline-none focus:ring-2 focus:ring-red-500/40"
           >
             <option value="">All statuses</option>
             {STATUSES.map((s) => (
@@ -334,7 +365,7 @@ function onChangeStatus(id: number, next: string) {
                 </div>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-3 text-lg w-full">
+              <div className="grid gap-4 lg:grid-cols-3 text-base w-full">
                 <div className="text-white/70">
                   <div className="text-white/50 text-sm">Customer</div>
                   <div className="font-semibold text-white/85">{t.full_name}</div>
@@ -374,8 +405,22 @@ function onChangeStatus(id: number, next: string) {
 
                 <div className="text-white/70">
                   <div className="text-white/50 text-sm">Notes</div>
-                  <div className="rounded-2xl border border-white/10 bg-black/45 p-4 text-white/70 min-h-[80px]">
-                    {t.notes || "—"}
+                  <textarea
+                    value={getNoteDraft(t)}
+                    onChange={(e) => setNoteDraft(t.id, e.target.value)}
+                    placeholder="Add internal notes…"
+                    className="mt-2 w-full min-h-[96px] rounded-2xl border border-white/10 bg-black/45 px-4 py-3 text-sm text-white/80 placeholder:text-white/40 outline-none focus:ring-2 focus:ring-red-500/40"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => saveNotes(t.id)}
+                      className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-red-600/25 hover:text-white"
+                      disabled={!!noteSaving[t.id]}
+                    >
+                      {noteSaving[t.id] ? "Saving…" : "Save notes"}
+                    </button>
+                    <div className="text-white/40 text-xs">Internal only</div>
                   </div>
                 </div>
               </div>

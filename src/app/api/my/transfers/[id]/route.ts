@@ -4,15 +4,23 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+type Ctx = {
+  params: Promise<{ id: string }>;
+};
+
+export async function PATCH(req: Request, ctx: Ctx) {
   const user = await currentUser();
-  const email = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress || "";
+  const email =
+    user?.emailAddresses?.[0]?.emailAddress ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "";
 
   if (!user || !email) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const id = Number(params?.id);
+  const { id: idStr } = await ctx.params;
+  const id = Number(idStr);
   if (!Number.isFinite(id)) {
     return NextResponse.json({ ok: false, error: "Invalid id" }, { status: 400 });
   }
@@ -26,7 +34,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (typeof body.seller_website === "string") update.seller_website = body.seller_website.trim();
   if (typeof body.notes === "string") update.notes = body.notes.trim();
 
-  // Prevent empty updates
   if (!Object.keys(update).length) {
     return NextResponse.json({ ok: false, error: "No fields to update" }, { status: 400 });
   }

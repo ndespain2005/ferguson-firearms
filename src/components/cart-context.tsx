@@ -5,7 +5,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 export type Product = {
   id: string;
   name: string;
-  category: "Accessories" | "Optics" | "Parts" | "Apparel";
+  category: "Accessories" | "Optics" | "Parts" | "Apparel" | "Rifles" | "Handguns" | "Collectibles";
   price: number;
 };
 

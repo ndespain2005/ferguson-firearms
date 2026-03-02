@@ -150,7 +150,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (tab === "transfers") loadTransfers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const wishlistItems = useMemo(() => {

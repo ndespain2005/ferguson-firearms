@@ -12,7 +12,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const id = Number(params.id);
+  const id = Number(params?.id);
   if (!Number.isFinite(id)) {
     return NextResponse.json({ ok: false, error: "Invalid id" }, { status: 400 });
   }

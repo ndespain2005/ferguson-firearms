@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==============================
+   Ferguson Firearms Theme
+   Black + red tactical (both themes)
+   ============================== */
+:root {
+  --bg: 0 0 0;
+  --fg: 255 255 255;
+
+  --card: 10 10 10;
+  --border: 255 255 255;
+
+  --muted: 200 200 200;
+  --accent: 255 0 0;
+  --ring: 255 0 0;
+}
+
+.dark {
+  --bg: 0 0 0;
+  --fg: 255 255 255;
+
+  --card: 10 10 10;
+  --border: 255 255 255;
+
+  --muted: 200 200 200;
+  --accent: 255 0 0;
+  --ring: 255 0 0;
+}
+
+@layer base {
+  :root { color-scheme: dark; }
+  .dark { color-scheme: dark; }
+
+  body { @apply antialiased; }
+}
+
+@layer utilities {
+  .bg-background { background-color: rgb(var(--bg)); }
+  .text-foreground { color: rgb(var(--fg)); }
+  .bg-card { background-color: rgb(var(--card)); }
+  .border-border { border-color: rgba(255,255,255,0.10); }
+  .text-muted { color: rgba(255,255,255,0.70); }
+  .ring-ring { --tw-ring-color: rgba(255,0,0,0.55); }
+}
+
+/* ==============================
+   Tactical background
+   ============================== */
+html { font-size: 17px; }
+@media (min-width: 768px) { html { font-size: 18px; } }
+
+body {
+  background:
+    radial-gradient(900px 520px at 18% 18%, rgba(255,0,0,0.22), transparent 55%),
+    radial-gradient(900px 640px at 82% 74%, rgba(180,0,0,0.18), transparent 60%),
+    radial-gradient(700px 500px at 50% 105%, rgba(255,0,0,0.10), transparent 55%),
+    repeating-linear-gradient(
+      120deg,
+      rgba(255,255,255,0.035) 0px,
+      rgba(255,255,255,0.035) 1px,
+      rgba(0,0,0,0.00) 6px,
+      rgba(0,0,0,0.00) 14px
+    ),
+    linear-gradient(to bottom, #000000 0%, #040000 55%, #000000 100%);
+  background-attachment: fixed;
+}
+
+/* grid overlay */
+.tactical-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,0,0,0.16) 1px, transparent 0);
+  background-size: 24px 24px;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse at center, black 55%, transparent 78%);
+}
+
+/* ==============================
+   Aggressive vibe utilities
+   ============================== */
+@keyframes ffGlowPulse {
+  0% { box-shadow: 0 0 18px rgba(255,0,0,0.10), 0 0 44px rgba(255,0,0,0.06); }
+  50% { box-shadow: 0 0 24px rgba(255,0,0,0.22), 0 0 80px rgba(255,0,0,0.12); }
+  100% { box-shadow: 0 0 18px rgba(255,0,0,0.10), 0 0 44px rgba(255,0,0,0.06); }
+}
+@keyframes ffGlowSweep {
+  0% { transform: translateX(-30%) translateY(-10%) rotate(20deg); opacity: 0.0; }
+  12% { opacity: 0.35; }
+  50% { opacity: 0.18; }
+  100% { transform: translateX(30%) translateY(10%) rotate(20deg); opacity: 0.0; }
+}
+
+.glow-card { position: relative; isolation: isolate; }
+.glow-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  background: radial-gradient(640px 140px at 20% 0%, rgba(255,0,0,0.42), transparent 60%);
+  opacity: 0.0;
+  transition: opacity 220ms ease;
+  z-index: -1;
+  filter: blur(12px);
+}
+.glow-card:hover::after { opacity: 0.60; animation: ffGlowSweep 900ms ease-out 1; }
+
+.glow-pulse { animation: ffGlowPulse 2.2s ease-in-out infinite; }
+
+.btn-red-glow { position: relative; overflow: hidden; }
+.btn-red-glow::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at 50% 50%, rgba(255,0,0,0.55), transparent 55%);
+  opacity: 0.0;
+  transform: scale(0.85);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.btn-red-glow:hover::after { opacity: 0.65; transform: scale(1.05); }
+
+/* ==============================
+   Background FX layers
+   ============================== */
+.ff-bgfx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ember canvas (behind grid) */
+.ff-embers {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+}
+
+/* scanline sweep */
+@keyframes ffScanline {
+  0% { transform: translateY(-120%); opacity: 0.0; }
+  8% { opacity: 0.35; }
+  50% { opacity: 0.18; }
+  100% { transform: translateY(220%); opacity: 0.0; }
+}
+.ff-scanline {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: 0;
+  height: 28%;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,0,0,0) 0%,
+      rgba(255,0,0,0.10) 35%,
+      rgba(255,0,0,0.22) 50%,
+      rgba(255,0,0,0.10) 65%,
+      rgba(255,0,0,0) 100%
+    );
+  filter: blur(0.5px);
+  mix-blend-mode: screen;
+  animation: ffScanline 7.2s linear infinite;
+  opacity: 0.0;
+}
+
+/* Watermark logo */
+.ff-watermark {
+  position: absolute;
+  inset: 0;
+  background-image: url("/ferguson-logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(980px, 92vw);
+  opacity: 0.06;
+  filter: grayscale(1) contrast(1.1);
+  mix-blend-mode: screen;
+}
+
+/* matte texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 700px at 50% 30%, rgba(255,0,0,0.08), transparent 60%),
+    radial-gradient(900px 600px at 15% 10%, rgba(255,0,0,0.10), transparent 55%),
+    radial-gradient(900px 600px at 85% 80%, rgba(255,0,0,0.06), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, rgba(0,0,0,0.00) 6px, rgba(0,0,0,0.00) 12px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, rgba(0,0,0,0.00) 3px, rgba(0,0,0,0.00) 7px),
+    radial-gradient(circle at center, rgba(0,0,0,0.00) 40%, rgba(0,0,0,0.70) 100%);
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+}
+
+/* Ensure app content sits above background fx */
+body > * { position: relative; z-index: 1; }

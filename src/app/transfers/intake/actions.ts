@@ -73,7 +73,14 @@ export async function submitTransferIntake(input: TransferIntakeInput) {
     </div>
   `;
 
-  await sendTransferNotification({ subject, html });
+  let emailSent = true;
+  try {
+    await sendTransferNotification({ subject, html });
+  } catch (e) {
+    // Don't fail the intake if email fails; record is already stored.
+    console.error("Transfer intake email failed", e);
+    emailSent = false;
+  }
 
-  return { id: data.id, createdAt: data.created_at };
+  return { id: data.id, createdAt: data.created_at, emailSent };
 }

@@ -26,6 +26,7 @@ export default function TransferIntakeClient() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [emailOk, setEmailOk] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
@@ -54,6 +55,7 @@ export default function TransferIntakeClient() {
         notes: notes.trim() || undefined,
       });
       setSuccessId(String(res.id));
+      setEmailOk(Boolean((res as any).emailSent));
     } catch (err: any) {
       setError(err?.message || "Something went wrong.");
     } finally {
@@ -78,6 +80,12 @@ export default function TransferIntakeClient() {
             <p className="text-white/60">
               Reference ID: <span className="font-semibold text-white">{successId}</span>
             </p>
+            {!emailOk ? (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+                Intake saved, but notification email did not send. Check RESEND settings on Vercel.
+              </div>
+            ) : null}
+
             <p className="text-white/60">
               Questions? Contact us at <span className="text-white font-semibold">{SITE.phone}</span> or{" "}
               <span className="text-white font-semibold">{SITE.email}</span>.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { updateTransferStatus, updateTransferStatuses } from "./actions";
+import { updateTransferStatus, updateTransferStatuses, deleteTransfer, deleteTransfers } from "./actions";
 import { Card, Badge } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
@@ -74,6 +74,11 @@ function downloadCsv(filename: string, csvText: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function verifyDelete(label: string) {
+  const v = window.prompt(`Type DELETE to confirm deletion of ${label}`);
+  return (v || "").trim().toUpperCase() === "DELETE";
 }
 
 function formatInSiteTz(iso: string) {
@@ -174,6 +179,47 @@ function toggleAllCurrentPage() {
 
 const selectedIds = useMemo(() => Object.entries(selected).filter(([, v]) => v).map(([k]) => Number(k)), [selected]);
 
+function onDeleteOne(id: number) {
+  if (!verifyDelete(`#${id}`)) return;
+
+  // optimistic remove
+  setRows((prev) => prev.filter((r) => r.id !== id));
+  setSelected((prev) => {
+    const next = { ...prev };
+    delete next[id];
+    return next;
+  });
+
+  startTransition(async () => {
+    try {
+      await deleteTransfer({ id });
+      setMsg(`Deleted #${id}.`);
+      setTimeout(() => setMsg(null), 1500);
+    } catch (e: any) {
+      setMsg(e?.message || "Delete failed.");
+    }
+  });
+}
+
+function bulkDelete() {
+  if (!selectedIds.length) return;
+  if (!verifyDelete(`${selectedIds.length} transfer(s)`)) return;
+
+  const ids = [...selectedIds];
+  setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
+  setSelected({});
+
+  startTransition(async () => {
+    try {
+      await deleteTransfers({ ids });
+      setMsg(`Deleted ${ids.length} transfer(s).`);
+      setTimeout(() => setMsg(null), 1500);
+    } catch (e: any) {
+      setMsg(e?.message || "Bulk delete failed.");
+    }
+  });
+}
+
 function bulkSetStatus(next: string) {
   if (!selectedIds.length) return;
   setMsg(null);
@@ -265,6 +311,14 @@ function onChangeStatus(id: number, next: string) {
                   <span className="text-white/80 font-semibold">{formatInSiteTz(t.created_at)}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onDeleteOne(t.id)}
+                    className="rounded-xl border border-red-500/20 bg-red-600/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-600/20"
+                    title="Delete this intake"
+                  >
+                    Delete
+                  </button>
                   <span className="text-white/50 text-sm">Status:</span>
                   <select
                     value={t.status || "Pending"}

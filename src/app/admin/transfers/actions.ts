@@ -36,3 +36,26 @@ export async function updateTransferStatuses(params: { ids: number[]; status: st
 
   return { ok: true as const };
 }
+
+export async function deleteTransfer(params: { id: number }) {
+  const gate = await requireAdmin();
+  if (!gate.ok) throw new Error("Unauthorized");
+
+  const db = supabaseAdmin();
+  const { error } = await db.from("transfers").delete().eq("id", params.id);
+
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}
+
+export async function deleteTransfers(params: { ids: number[] }) {
+  const gate = await requireAdmin();
+  if (!gate.ok) throw new Error("Unauthorized");
+  if (!params.ids?.length) return { ok: true as const };
+
+  const db = supabaseAdmin();
+  const { error } = await db.from("transfers").delete().in("id", params.ids);
+
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+}

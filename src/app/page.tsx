@@ -128,9 +128,9 @@ export default function HomePage() {
         <div className="grid gap-4 md:grid-cols-4">
           {[
             ["Fast Communication", "Clear updates from intake → pickup."],
-            ["Clean UI + Process", "Designed to feel premium and simple."],
+            ["Built for You, Not Just a Transaction", "Designed to feel premium and simple."],
             ["Local Focus", "Indianapolis & Wanamaker area."],
-            ["Tactical Brand", "Black/red styling with subtle motion."],
+            ["Real People. Real Accountability.", "Black/red styling with subtle motion."],
           ].map(([h, p]) => (
             <div key={h} className="rounded-2xl border border-white/10 bg-black/45 p-5">
               <div className="text-lg font-semibold">{h}</div>

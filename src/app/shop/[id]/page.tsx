@@ -5,7 +5,8 @@ import { Card, SectionHeading, Badge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: any) {
+  const id = params?.id as string;
   const item = getItemById(id);
   if (!item) return notFound();
 

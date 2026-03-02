@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { updateTransferStatus } from "./actions";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { updateTransferStatus, updateTransferStatuses } from "./actions";
 import { Card, Badge } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
@@ -22,6 +22,59 @@ type TransferRow = {
   expected_arrival: string | null;
   notes: string | null;
 };
+
+const STATUSES = ["Pending", "Received", "Ready", "Completed"] as const;
+
+function statusTone(status: string) {
+  const s = (status || "Pending").toLowerCase();
+  if (s === "completed") return "border-emerald-500/30 bg-emerald-500/15 text-emerald-200";
+  if (s === "ready") return "border-violet-500/30 bg-violet-500/15 text-violet-200";
+  if (s === "received") return "border-sky-500/30 bg-sky-500/15 text-sky-200";
+  return "border-amber-500/30 bg-amber-500/15 text-amber-200";
+}
+
+function toCsv(rows: any[]) {
+  const headers = [
+    "id",
+    "created_at",
+    "status",
+    "full_name",
+    "phone",
+    "email",
+    "address",
+    "seller_name",
+    "seller_website",
+    "tracking_number",
+    "firearm_type",
+    "item_name",
+    "serial_number",
+    "expected_arrival",
+    "notes",
+  ];
+  const escape = (v: any) => {
+    const s = String(v ?? "");
+    const needs = /[",\n]/.test(s);
+    const out = s.replaceAll('"', '""');
+    return needs ? `"${out}"` : out;
+  };
+  const lines = [headers.join(",")];
+  for (const r of rows) {
+    lines.push(headers.map((h) => escape(r[h])).join(","));
+  }
+  return lines.join("\n");
+}
+
+function downloadCsv(filename: string, csvText: string) {
+  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 const STATUSES = ["Pending", "Received", "Ready", "Completed"] as const;
 
@@ -48,10 +101,32 @@ export default function AdminTransfersClient({ initial }: { initial: TransferRow
   const [rows, setRows] = useState<TransferRow[]>(initial);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | (typeof STATUSES)[number]>("");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+  const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
+  setPage(1);
+  setSelected({});
+}, [query, statusFilter]);
+
+const metrics = useMemo(() => {
+  const all = rows;
+  const count = (s: string) => all.filter((r) => (r.status || "Pending") === s).length;
+  return {
+    total: all.length,
+    pending: count("Pending"),
+    received: count("Received"),
+    ready: count("Ready"),
+    completed: count("Completed"),
+  };
+}, [rows]);
+
+const filtered = useMemo(() => {
+
+
     const q = query.trim().toLowerCase();
     return rows.filter((t) => {
       if (statusFilter && (t.status || "Pending") !== statusFilter) return false;
@@ -75,7 +150,52 @@ export default function AdminTransfersClient({ initial }: { initial: TransferRow
     });
   }, [rows, query, statusFilter]);
 
-  function onChangeStatus(id: number, next: string) {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageSafe = Math.min(page, totalPages);
+  const paged = useMemo(() => {
+    const start = (pageSafe - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, pageSafe]);
+
+  function isSelected(id: number) {
+  return !!selected[id];
+}
+
+function toggleOne(id: number) {
+  setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+}
+
+function toggleAllCurrentPage() {
+  const allChecked = paged.every((r) => selected[r.id]);
+  setSelected((prev) => {
+    const next = { ...prev };
+    for (const r of paged) next[r.id] = !allChecked;
+    return next;
+  });
+}
+
+const selectedIds = useMemo(() => Object.entries(selected).filter(([, v]) => v).map(([k]) => Number(k)), [selected]);
+
+function bulkSetStatus(next: string) {
+  if (!selectedIds.length) return;
+  setMsg(null);
+
+  // optimistic
+  setRows((prev) => prev.map((r) => (selectedIds.includes(r.id) ? { ...r, status: next } : r)));
+
+  startTransition(async () => {
+    try {
+      await updateTransferStatuses({ ids: selectedIds, status: next });
+      setMsg(`Updated ${selectedIds.length} transfer(s).`);
+      setTimeout(() => setMsg(null), 1500);
+      setSelected({});
+    } catch (e: any) {
+      setMsg(e?.message || "Bulk update failed.");
+    }
+  });
+}
+
+function onChangeStatus(id: number, next: string) {
     setMsg(null);
 
     // Optimistic update
@@ -99,7 +219,7 @@ export default function AdminTransfersClient({ initial }: { initial: TransferRow
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-2 text-sm text-white/70">
-            {filtered.length} results
+            {filtered.length} results • {metrics.total} total
           </div>
           {isPending ? <Badge>Updating…</Badge> : null}
           {msg ? <Badge>{msg}</Badge> : null}
@@ -131,8 +251,15 @@ export default function AdminTransfersClient({ initial }: { initial: TransferRow
       </div>
 
       <div className="grid gap-5">
-        {filtered.map((t) => (
+        {paged.map((t) => (
           <Card key={t.id} title={`#${t.id} • ${t.full_name}`}>
+            <div className="mb-4 flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-white/70 text-sm">
+                <input type="checkbox" checked={isSelected(t.id)} onChange={() => toggleOne(t.id)} />
+                Select
+              </label>
+              <span className={`rounded-xl border px-3 py-1 text-sm font-semibold ${statusTone(t.status || 'Pending')}`}>{t.status || 'Pending'}</span>
+            </div>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="text-white/60">
                 <div>

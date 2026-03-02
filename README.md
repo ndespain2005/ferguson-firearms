@@ -71,3 +71,7 @@ create table if not exists transfers (
 
 ## Admin dashboard
 - /admin/transfers supports search and status updates. Only ADMIN_EMAIL is allowed.
+
+## v26
+- Admin transfers: metrics, search, pagination, CSV export, bulk status updates.
+- Shop: sort + wishlist/account placeholders.

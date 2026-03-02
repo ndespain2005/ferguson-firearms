@@ -251,15 +251,25 @@ function matchesQuery(name: string, query: string) {
   return name.toLowerCase().includes(q);
 }
 
+function sortItems<T extends { name: string; price: number; tag?: string }>(items: T[], mode: "Featured" | "Name" | "PriceLow" | "PriceHigh") {
+  const copy = [...items];
+  if (mode === "Name") return copy.sort((a, b) => a.name.localeCompare(b.name));
+  if (mode === "PriceLow") return copy.sort((a, b) => (a.price || 0) - (b.price || 0));
+  if (mode === "PriceHigh") return copy.sort((a, b) => (b.price || 0) - (a.price || 0));
+  // Featured: keep original order
+  return copy;
+}
+
 export default function ShopPage() {
   const { add } = useCart();
   const [filter, setFilter] = useState<Filter>("All");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"Featured" | "Name" | "PriceLow" | "PriceHigh">("Featured");
 
 const allInventory = useMemo(() => {
   const items = [...ACCESSORIES, ...RIFLES, ...HANDGUNS, ...COLLECTIBLES, ...APPAREL];
   return items.filter((p) => matchesQuery(p.name, query));
-}, [query]);
+}, [query, sort]);
 
 const filteredMain = useMemo(() => {
   if (filter === "All") return allInventory;
@@ -273,15 +283,15 @@ const filteredMain = useMemo(() => {
   return items;
 }, [filter, query]);
   const filteredApparel = useMemo(() => {
-    return APPAREL.filter((p) => matchesQuery(p.name, query));
+    return sortItems(APPAREL.filter((p) => matchesQuery(p.name, query)), sort);
   }, [query]);
 
   const filteredFeatured = useMemo(() => {
-    return FEATURED.filter((p) => matchesQuery(p.name, query));
+    return sortItems(FEATURED.filter((p) => matchesQuery(p.name, query)), sort);
   }, [query]);
 
   const filteredRecent = useMemo(() => {
-    return RECENT.filter((p) => matchesQuery(p.name, query));
+    return sortItems(RECENT.filter((p) => matchesQuery(p.name, query)), sort);
   }, [query]);
 
   return (

@@ -36,7 +36,7 @@ export default function ContactPage() {
       <SectionHeading
         eyebrow="Contact"
         title="Indianapolis, IN — Wanamaker Area"
-        subtitle="Mon–Fri 8:00 AM – 6:00 PM • Phone 317-XXXXXXX"
+        subtitle="Mon–Fri 8:00 AM – 6:00 PM • Phone 317-600-8758"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -108,7 +108,8 @@ export default function ContactPage() {
                 <div className="text-xs text-muted">Phone</div>
                 <input
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="317-XXXXXXX"
+                  placeholder="317-600-8758
+              "
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />

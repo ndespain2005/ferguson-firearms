@@ -68,3 +68,6 @@ create table if not exists transfers (
   notes text
 );
 ```
+
+## Admin dashboard
+- /admin/transfers supports search and status updates. Only ADMIN_EMAIL is allowed.

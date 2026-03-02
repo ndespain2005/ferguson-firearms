@@ -350,8 +350,9 @@ function onChangeStatus(id: number, next: string) {
                   >
                     Delete
                   </button>
-                  <span className="text-white/50 text-sm">Status:</span>
-                  <select
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/45 px-3 py-2">
+                    <span className="text-white/50 text-xs">Status</span>
+                    <select
                     value={t.status || "Pending"}
                     onChange={(e) => onChangeStatus(t.id, e.target.value)}
                     className="rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-sm text-white/90 outline-none focus:ring-2 focus:ring-red-500/40"
@@ -362,6 +363,7 @@ function onChangeStatus(id: number, next: string) {
                       </option>
                     ))}
                   </select>
+                  </div>
                 </div>
               </div>
 

@@ -272,9 +272,6 @@ const filteredMain = useMemo(() => {
   items = items.filter((p) => matchesQuery(p.name, query));
   return items;
 }, [filter, query]);
-
-  }, [filter]);
-
   const filteredApparel = useMemo(() => {
     return APPAREL.filter((p) => matchesQuery(p.name, query));
   }, [query]);

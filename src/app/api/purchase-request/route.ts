@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     source: source || null,
     receiving_ffl: receivingFFL,
     notes: notes || null,
-    status: "new",
+    status: "New",
     user_agent: request.headers.get("user-agent") ?? null,
     ip: request.headers.get("x-forwarded-for") ?? null,
   };

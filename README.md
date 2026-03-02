@@ -75,3 +75,7 @@ create table if not exists transfers (
 ## v26
 - Admin transfers: metrics, search, pagination, CSV export, bulk status updates.
 - Shop: sort + wishlist/account placeholders.
+
+## Shop enhancements
+- /shop: filter chips, availability filters, brand/caliber filters, wishlist (localStorage), quick view modal.
+- /shop/[id]: product detail page.

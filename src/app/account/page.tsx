@@ -222,7 +222,7 @@ export default function AccountPage() {
           <div className="text-sm text-muted">Sign in to view your dashboard and track requests.</div>
           <div className="mt-4 flex gap-3">
             <ButtonLink href="/sign-in">Sign in</ButtonLink>
-            <ButtonLink href="/sign-up" variant="secondary">
+            <ButtonLink href="/sign-up" variant="ghost">
               Create account
             </ButtonLink>
           </div>
@@ -285,10 +285,10 @@ export default function AccountPage() {
             <div className="space-y-6">
               <Card title="Quick access">
                 <div className="grid gap-2">
-                  <ButtonLink href="/contact" variant="secondary">
+                  <ButtonLink href="/contact" variant="ghost">
                     Contact the shop
                   </ButtonLink>
-                  <ButtonLink href="/admin" variant="secondary">
+                  <ButtonLink href="/admin" variant="ghost">
                     Admin dashboard
                   </ButtonLink>
                 </div>

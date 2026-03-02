@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const PHONE = "317-XXXXXXX";
-const EMAIL = "317XXXXXXX@fergusonfirearms.com"; // placeholder until domain is purchased
+const PHONE = "317-600-8758";
+const EMAIL = "nickdespain@fergusonfirearms.com"; // placeholder until domain is purchased
 
 export default function SiteFooter() {
   return (

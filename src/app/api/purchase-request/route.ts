@@ -78,8 +78,8 @@ export async function POST(request: Request) {
 
   // 2) Optional: Email via Resend (recommended)
   const resendKey = process.env.RESEND_API_KEY;
-  const to = process.env.PURCHASE_REQUEST_TO; // e.g. "orders@fergusonfirearms.com"
-  const from = process.env.PURCHASE_REQUEST_FROM ?? "Ferguson Firearms <no-reply@fergusonfirearms.com>";
+  const to = process.env.PURCHASE_REQUEST_TO; // e.g. "TBD"
+  const from = process.env.PURCHASE_REQUEST_FROM ?? "Ferguson Firearms <TBD>";
 
   if (resendKey && to) {
     try {

@@ -3,7 +3,7 @@ export const SITE = {
   city: "Indianapolis, IN",
   suburb: "Wanamaker",
   timeZone: "America/Indiana/Indianapolis",
-  hours: "Mon–Fri 8:00 AM – 6:00 PM",
-  phone: "3176008758",
-  email: "nickdespain@fergusonfirearms.com",
+  hours: "TBD",
+  phone: "317-xxx-xxxx",
+  email: "TBD",
 } as const;

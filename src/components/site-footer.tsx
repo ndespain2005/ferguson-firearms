@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { SITE } from "@/lib/site-config";
 
-const PHONE = "317-XXXXXXX";
-const EMAIL = "{SITE.email}"; // placeholder until domain is purchased
+const PHONE = "317-xxx-xxxx";
+const EMAIL = "TBD"; // placeholder until domain is purchased
 
 export default function SiteFooter() {
   return (
@@ -26,7 +26,7 @@ export default function SiteFooter() {
               </div>
             </div>
           </div>
-          <div className="text-sm text-muted">Mon–Fri 8:00 AM – 6:00 PM</div>
+          <div className="text-sm text-muted">TBD</div>
         </div>
 
         <div className="space-y-2">

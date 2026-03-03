@@ -4,7 +4,7 @@ import { SITE } from "@/lib/site-config";
 
 const CITY = "Indianapolis, IN";
 const AREA = "Wanamaker";
-const HOURS = "Mon–Fri 8:00 AM – 6:00 PM";
+const HOURS = "TBD";
 
 export default function AboutPage() {
   return (

@@ -80,8 +80,8 @@ export default function ShopPage() {
   return (
     <div className="space-y-10 text-white">
       <SectionHeading
-        eyebrow="Shop"
-        title="Inventory"
+        eyebrow="Shop Preview"
+        title="Inventory Preview"
         subtitle="Browse, filter, and request availability. Accessories/Apparel use stock counts — firearms listings are request-only."
       />
 

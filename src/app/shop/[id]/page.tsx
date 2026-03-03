@@ -17,7 +17,7 @@ export default function ProductDetailPage({ params }: any) {
   return (
     <div className="space-y-10 text-white">
       <SectionHeading
-        eyebrow="Shop"
+        eyebrow="Shop Preview"
         title={item.name}
         subtitle={requestOnly ? "Request-only listing — submit intake for availability." : "Product details"}
       />

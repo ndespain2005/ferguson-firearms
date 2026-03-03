@@ -5,7 +5,7 @@ import { Card, ButtonLink, Badge, SectionHeading } from "@/components/ui";
 import { SITE } from "@/lib/site-config";
 
 const PHONE = "317-XXXXXXX";
-const HOURS = "Mon–Fri 8:00 AM – 6:00 PM";
+const HOURS = "TBD";
 const CITY = "Indianapolis, IN";
 const AREA = "Wanamaker";
 

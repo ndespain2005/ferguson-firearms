@@ -16,18 +16,18 @@ function isPublicAsset(pathname: string) {
 }
 
 export default clerkMiddleware((_auth, req: NextRequest) => {
-  const lockEnabled = (process.env.SITE_LOCK || "").toLowerCase() === "true" || process.env.SITE_LOCK === "1";
+  const lockEnabled =
+    (process.env.SITE_LOCK || "").toLowerCase() === "true" ||
+    process.env.SITE_LOCK === "1";
+
   if (!lockEnabled) return NextResponse.next();
 
   const { pathname } = req.nextUrl;
 
-  // Allow unlock screen + assets
+  // Always allow the unlock page and static assets needed to render it.
   if (pathname === "/unlock" || pathname.startsWith("/unlock/") || isPublicAsset(pathname)) {
     return NextResponse.next();
   }
-
-  // Optional: allow health checks
-  if (pathname === "/api/health") return NextResponse.next();
 
   const password = process.env.SITE_PASSWORD || "preview";
   const cookie = req.cookies.get("site_auth")?.value || "";
@@ -43,14 +43,6 @@ export default clerkMiddleware((_auth, req: NextRequest) => {
 });
 
 export const config = {
-  matcher: [
-    "/admin(.*)",
-    "/account(.*)",
-    "/sign-in(.*)",
-    "/sign-up(.*)",
-    "/transfers(.*)",
-    "/shop(.*)",
-    "/((?!_next|.*\..*).*)",
-    "/(api|trpc)(.*)",
-  ],
+  // Lock EVERYTHING (all routes + API). Only /unlock + static assets are allowed above.
+  matcher: ["/(.*)"],
 };

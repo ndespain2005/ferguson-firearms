@@ -1,6 +1,46 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default clerkMiddleware();
+function isPublicAsset(pathname: string) {
+  return (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/robots") ||
+    pathname.startsWith("/sitemap") ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/icons") ||
+    pathname.startsWith("/products") ||
+    pathname.includes(".")
+  );
+}
+
+export default clerkMiddleware((_auth, req: NextRequest) => {
+  const lockEnabled = (process.env.SITE_LOCK || "").toLowerCase() === "true" || process.env.SITE_LOCK === "1";
+  if (!lockEnabled) return NextResponse.next();
+
+  const { pathname } = req.nextUrl;
+
+  // Allow unlock screen + assets
+  if (pathname === "/unlock" || pathname.startsWith("/unlock/") || isPublicAsset(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Optional: allow health checks
+  if (pathname === "/api/health") return NextResponse.next();
+
+  const password = process.env.SITE_PASSWORD || "preview";
+  const cookie = req.cookies.get("site_auth")?.value || "";
+
+  if (cookie === password) {
+    return NextResponse.next();
+  }
+
+  const url = req.nextUrl.clone();
+  url.pathname = "/unlock";
+  url.searchParams.set("next", pathname);
+  return NextResponse.redirect(url);
+});
 
 export const config = {
   matcher: [

@@ -133,7 +133,7 @@ export const INVENTORY: InventoryItem[] = [
   // Handguns (request-only)
   {
     id: "hg-1",
-    name: "Handgun 1" 19 Gen 5 (Example Listing)",
+    name: "Handgun 1 (Preview Listing)",
     category: "Handguns",
     price: 0,
     image: "/products/handgun-1.png",
